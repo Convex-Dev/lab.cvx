@@ -38,6 +38,35 @@
 
 
 
+(defn connect.range
+
+
+  ([n.client n.peer]
+
+   (connect.range n.client
+                  n.peer
+                  nil))
+
+
+  ([n.client n.peer option+]
+
+   (let [host      (:host option+)
+         port.base (or (:port.base option+)
+                       .peer.default.port)]
+     (connect n.client
+              (loop [acc []
+                     i   0]
+                (if (< i
+                       n.peer)
+                  (recur (conj acc
+                               {:host host
+                                :port (+ port.base
+                                         i)})
+                         (inc i))
+                  acc))))))
+
+
+
 (defn close
 
   [pool]
