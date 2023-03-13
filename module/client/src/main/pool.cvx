@@ -1,0 +1,49 @@
+{}
+
+;;;;;;;;;;
+
+
+(defn connect
+
+
+  ([end-point+]
+
+   (start nil
+          end-point+))
+
+
+  ([n.client end-point+]
+
+   (when (and n.client
+              (< n.client
+                 1))
+     (fail :ARGUMENT
+           "Must start at least 1 client"))
+   (when (empty? end-point+)
+     (fail :ARGUMENT
+           "Must provide at least 1 end point"))
+   (let [n.end-point (count end-point+)
+         n.client-2  (or n.client
+                         n.end-point)]
+     (loop [acc []
+            i   0]
+       (if (< i
+              n.client-2)
+         (recur (conj acc
+                      (.client.connect (nth end-point+
+                                            (mod i
+                                                 n.end-point))))
+                (inc i))
+         acc)))))
+
+
+
+(defn close
+
+  [pool]
+
+  (reduce (fn [_ cnx]
+            (.client.close cnx))
+          nil
+          pool)
+  nil)

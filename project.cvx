@@ -1,1 +1,2 @@
-{:deps {dev [:relative "private/cvx"]}}
+{:deps {dev    [:relative "private/cvx"]
+        client [:relative "module/client/src/main"]}}
