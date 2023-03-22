@@ -1,0 +1,73 @@
+{}
+
+
+;;;;;;;;;;
+
+
+(defn create-user
+
+  ([env.gen]
+
+   (let [addr-caller *address*
+         addr-new    (deploy `(do
+                                (set-key ~(.gen (.gen.blob-32)))
+                                ~(env.def.code (.gen env.gen
+                                                     {:size 10}))))]
+     (.account.switch .account.genesis)
+     (transfer addr-new
+               10000000000)
+     (.account.switch addr-caller)
+     addr-new)))
+
+
+
+(defn create-user+
+
+  [n-account]
+
+  (when (< n-account
+           1)
+    (fail :ARGUMENT
+          "Must generate at least 1 account"))
+   (let [-env.gen (env.gen)
+         addr.first (create-user -env.gen)]
+    (loop [addr.last addr.first
+           i         (dec n-account)]
+      (if (> i
+             0)
+        (recur (create-user -env.gen)
+               (dec i))
+        [addr.first
+         addr.last]))))
+
+
+
+(defn env.def
+
+  [env]
+
+  (eval (env.def.code env))
+  env)
+
+
+
+(defn env.def.code
+
+  [env]
+
+  (cons 'do
+        (reduce (fn [acc [sym v]]
+                  (conj acc
+                        `(def ~sym
+                              (quote ~v))))
+                []
+                env)))
+
+
+
+(defn env.gen
+
+  []
+
+  (.gen.map (.gen.syntax (.gen.symbol))
+            (.gen.any)))

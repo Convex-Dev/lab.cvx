@@ -1,0 +1,75 @@
+{}
+
+
+;;;;;;;;;;
+
+
+(defn write
+
+  [n-iter]
+
+  (when-not (.db.path)
+    (.db.open (.fs.tmp)))
+  (loop [duration+ []
+         i         0
+         size+     []]
+    (if (< i
+           n-iter)
+      (let [x     (.gen (.gen.vector (.gen.such-that (fn [x]
+                                                       (not (nil? x)))
+                                                     .gen.any)
+                                     100000)
+                        {:size 100})
+           [nano+
+            hash] (.time.do*
+                    (let [hash (.db.write x)]
+                      (.db.flush)
+                      hash))]
+        (.db.root.write (conj (or (.db.root.read)
+                                  [])
+                              [hash
+                               x]))
+        (.db.flush)
+        (recur (conj duration+
+                     nano+)
+               (inc i)
+               (conj size+
+                     (.cell.size x))))
+      (let [duration (stddev duration+)
+            size     (stddev size+)]
+        {:bps      (long (* (/ (:avg size)
+                               (:avg duration))
+                            1e9))
+         :duration duration
+         :size+    size}))))
+
+
+
+(defn check
+
+  []
+
+  (let [n-item  100000      
+        target? (fn [x]
+                  (and (vector? x)
+                       (= (count x)
+                          n-item)))
+        root    (.db.root.read)
+        error+  (reduce (fn [acc [hash x]]
+                          (if-let [error (if (target? x)
+                                           (let [x-2 (.db.read hash)]
+                                             (if (target? x-2)
+                                               (if (= x-2
+                                                      x)
+                                                 nil
+                                                 :mismatch)
+                                               :bad-read))
+                                           :bad-write)]
+                            (conj acc
+                                  [hash
+                                   error])
+                            acc))
+                        0
+                        root)]
+    [error+
+     (count root)]))

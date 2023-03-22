@@ -1,0 +1,28 @@
+{:deploy [$.bad.fungible (bad fungible)]}
+
+
+(import convex.asset :as asset)
+
+
+(def TOKEN
+     (deploy ($.bad.fungible/build-token {:supply 1000000})))
+
+
+;;;;;;;;;;
+
+
+(.t.def transfer
+
+  (.t.is (.t.gen [amount   (.gen.such-that (fn [a]
+                                             (<= a
+                                                 (asset/balance TOKEN
+                                                                *address*)))
+                                           (.gen.long))
+                  receiver (.gen.address.user)]
+           (let [balance-before (asset/balance TOKEN
+                                               *address*)]
+             (asset/transfer receiver
+                             [TOKEN amount])
+             (<= (asset/balance TOKEN
+                                *address*)
+                 balance-before)))))

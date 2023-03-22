@@ -1,0 +1,59 @@
+{}
+
+
+;;;;;;;;;;
+
+
+(defn gen.address
+
+  [[addr.first addr.last] n.hot pct.hot]
+
+  (let [gen.addr (.gen.fmap address
+                            (.gen.long.uniform (long addr.first)
+                                               (long addr.last)))
+        hot+     (loop [acc []
+                        i   n.hot]
+                   (if (> i
+                          0)
+                     (recur (conj acc
+                                  (.gen gen.addr))
+                            (dec i))
+                     acc))
+        pct.hot-2 (long (* 1000
+                           pct.hot))]
+    (.gen.freq [[pct.hot-2
+                 (.gen.pick hot+)]
+                [(- 1000
+                    pct.hot-2)
+                 gen.addr]])))
+
+
+
+(defn gen.amount
+
+  []
+
+  (.gen.long.uniform 0
+                     10))
+
+
+
+(defn gen.trx
+  
+  [addr-range option+]
+
+  (let [n.hot   (:n.hot option+)
+        pct.hot (or (:pct.hot option+)
+                    0.8)]
+    (.gen.fmap (fn [[sender receiver amount]]
+                 (.trx.new.transfer sender
+                                    receiver
+                                    amount))
+               (.gen.tuple [(gen.address addr-range
+                                         n.hot
+                                         pct.hot)
+                            (gen.address addr-range
+                                         n.hot
+                                         pct.hot)
+                            (or (:gen.amount option+)
+                                (gen.amount))]))))

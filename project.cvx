@@ -1,2 +1,5 @@
-{:deps {dev    [:relative "private/cvx"]
-        client [:relative "module/client/src/main"]}}
+{:deps {bad       [:relative "module/bad/src/main"]
+        bad.test  [:relative "module/bad/src/test"]
+        dev       [:relative "private/cvx"]
+        lib       [:relative "module/lib/src/main"]
+        test      [:relative "module/lib/src/test"]}}

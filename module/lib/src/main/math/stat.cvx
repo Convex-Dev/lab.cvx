@@ -1,0 +1,78 @@
+{}
+
+
+;;;;;;;;;;
+
+
+(defn sum
+
+  [x+]
+
+  (apply +
+         x+))
+
+
+
+(defn avg
+
+
+  ([x+]
+
+   (avg x+
+        nil))
+
+
+  ([x+ option+]
+
+   (let [sum- (or (:sum option+)
+                 (sum x+))]
+     
+     {:avg (/ sum-
+              (count x+))
+      :sum sum-})))
+     
+
+
+(defn stddev
+
+
+  ([x+]
+
+   (stddev x+
+           nil))
+
+
+  ([x+ option+]
+
+   (let [avg-1       (:avg option+)
+         avg-2       (or avg-1
+                         (:avg (avg x+)))
+         n           (count x+)
+         type        (:type option+)
+         denominator (cond
+                       ;;
+                       (or (nil? type)
+                           (= type
+                              :population))
+                       n
+                       ;;
+                       (= type
+                          :sample)
+                       (dec n)
+                       ;;
+                       (fail :ARGUMENT
+                             (str "Unknown stddev type: "
+                                  type)))]
+     {:avg    avg-2
+      :stddev (sqrt (/ (reduce (fn [acc x]
+                                (+ acc
+                                   (pow (abs (- x
+                                                avg-2))
+                                        2)))
+                               0
+                               x+)
+                        denominator))})))
+
+
+
+
