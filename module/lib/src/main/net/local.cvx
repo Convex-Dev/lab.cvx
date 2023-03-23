@@ -1,4 +1,4 @@
-{:deploy [$.client.pool (client pool)]}
+{:deploy [$.client.pool (lib client pool)]}
 
 
 ;;;;;;;;;
@@ -357,7 +357,7 @@
   [n]
 
   (let [client-pool ($.client.pool/connect.range 200
-                                                 2)]
+                                                 10)]
     (loop [acc []
            i   0]
       (if (< i
@@ -640,3 +640,33 @@
                 (.stream.txt.outln (str "    " h)))
               last-block-2+))
   nil)
+
+
+
+(defn fake-convergence
+
+  [peer+]
+
+  (reduce (fn [acc [cp hash.state.consensus->i.peer+]]
+            (reduce (fn [acc-2 [hash.state.consensus i.peer+]]
+                      (loop [acc-3     acc-2
+                             i.peer-2+ i.peer+]
+                        (if (empty? i.peer-2+)
+                          acc-3
+                          (let [i.peer    (first i.peer-2+)
+                                i.peer-3+ (next i.peer-2+)]
+                            (recur (reduce (fn [acc-4 i.peer-2]
+                                             (if-let [d (divergence peer+
+                                                                    i.peer
+                                                                    i.peer-2)]
+                                               (conj acc-4
+                                                     [i.peer
+                                                      i.peer-2])
+                                               acc-4))
+                                           acc-3
+                                           i.peer-3+)
+                                   i.peer-3+)))))
+                    acc
+                    hash.state.consensus->i.peer+))
+          []
+          (agreement peer+)))
