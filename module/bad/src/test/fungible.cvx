@@ -1,17 +1,85 @@
 {:deploy [$.bad.fungible (bad fungible)]}
 
 
+;;;;;;;;;;
+
+
+
+
 (import convex.asset :as asset)
 
 
 (def TOKEN
-     (deploy ($.bad.fungible/build-token {:supply 1000000})))
+     (deploy ($.bad.fungible/build-token {:supply 1000})))
 
 
-;;;;;;;;;;
 
 
-(.t.def transfer
+
+
+;;;;;;;;;; Unit tests
+
+
+(.t.def transfer.basic
+
+  ;; Success
+
+  (.t.is (= 1000
+            (asset/balance TOKEN
+                           *address*))
+         "First, my balance is equal to the supply")
+
+  (asset/transfer #12
+                  [TOKEN 50])
+
+  (.t.is (= 950
+            (asset/balance TOKEN
+                           *address*))
+         "After the transfer, my balance is 50 tokens down")
+
+  (.t.is (= 50
+            (asset/balance TOKEN
+                           #12))
+         "The balance of the receiver is 50 tokens up")
+
+
+  ;;; Failure
+
+  (.t.is (.t.ex (asset/transfer #12
+                                [TOKEN 10000000000]))
+         "Cannot transfer amount greater than balance!")
+
+
+  (.t.is (.t.ex (asset/transfer #12
+                                [TOKEN #{:a :b :c}]))
+         "Amount is not a number, must fail!"));
+
+
+
+
+
+
+;;;;;;;;;; Generative tests
+
+
+#_(.t.def gen.transfer.garbage
+
+  (.t.is (.t.gen [amount   (.gen.such-that (fn [x]
+                                             (not (number? x)))
+                                           (.gen.any))
+                  receiver (.gen.address.user)]
+           (.t.ex (asset/transfer receiver
+                                  [TOKEN amount])))
+         "Must fail whenever amount to transfer is NOT a number"))
+
+
+
+
+
+
+
+
+#_(.t.def gen.transfer
 
   (.t.is (.t.gen [amount   (.gen.such-that (fn [a]
                                              (<= a
@@ -26,3 +94,23 @@
              (<= (asset/balance TOKEN
                                 *address*)
                  balance-before)))))
+
+
+
+
+
+
+
+
+#_(.t.def gen.transfer.bad-amount
+
+  (.t.is (.t.gen [amount   (.gen.such-that (fn [a]
+                                             (or (< a
+                                                    0)
+                                                 (> a
+                                                    (asset/balance TOKEN
+                                                                   *address*))))
+                                           (.gen.long))
+                  receiver (.gen.address.user)]
+           (.t.ex (asset/transfer receiver
+                                  [TOKEN amount])))))

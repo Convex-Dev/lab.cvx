@@ -219,26 +219,27 @@
          ^{:callable? true}
 
          [addr amount]
-
+         
+         (when-not (number? amount)
+           (fail :ARGUMENT
+                 "Amount must be a number"))
          (let [addr   (address addr)
-               amount (if amount
-                        (long amount)
-                        0)
                bal    (or (get-holding *caller*)
                           0)
                tbal   (or (get-holding addr)
                           0)]
+           (when (> amount
+                    bal)
+             (fail :ARGUMENT
+                   "Requested amount greater than current balance"))
            ;;
            ;;
            ;; <!> COMMENTED OUT ON PURPOSE TO INTRODUCE A BUG <!>
            ;;
-           ;; Amount must be in valid range.
-           ;;
-           ;(when-not (<= 0
-           ;              amount
-           ;              bal)
+           ;(when (< amount
+           ;         0)
            ;  (fail :ARGUMENT
-           ;        "Amount not within range"))
+           ;        "Amount below 0"))
            ;;
            ;;
            ;; Need this check in case of self-transfers.
