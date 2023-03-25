@@ -1,0 +1,29 @@
+{}
+
+
+;;;;;;;;;;
+
+
+;; A simple contract that collects votes
+;; Max one vote per account
+
+;; who has voted so far
+(def voted #{})
+
+;; accumulated votes for valid options
+(def votes {:red 0, :green 0, :blue 0})
+
+(defn ^:callable? vote [colour]
+  ;; pre-conditions
+  (when-not (get votes colour) (fail "invalid choice"))
+  (when (get voted *caller*)   (fail "already voted!"))
+  
+  ;; atomic state updates
+  (def votes (assoc votes
+                    colour
+                    (inc (get votes colour))))
+  (def voted (conj voted
+                   *caller*))
+  
+  ;; final return value if successful
+  :voted-ok)
