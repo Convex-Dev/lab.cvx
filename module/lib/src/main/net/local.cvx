@@ -77,7 +77,7 @@
         peer (.process.run (conj command
                                  `(let [[ok?
                                          x]  (.state.safe*
-                                               (.log.level.set :debug)
+                                               (.log.level.set :info)
                                                (.log.out.set (.file.stream.out ~(str dir "/" i "/log.cvx"))))]
                                     (when-not ok?
                                       (.sys.exit 128))
@@ -303,8 +303,8 @@
 
   (.log.level.set :info)
   (def ps
-       (start '[java "-Xms2G" "-jar" "/Users/adam/Code/convex/clj/tool/private/target/shell.uber.jar"]
-              ;'[cvx]
+       (start ;'[java "-Xms2G" "-jar" "/Users/adam/Code/convex/clj/tool/private/target/shell.uber.jar"]
+              '[cvx]
               {:dir "/tmp/net"
                :n   n})))
 
@@ -338,17 +338,29 @@
     (.db.open (.fs.tmp)))
   (.try.resrc* [client (.client.connect)
                        (.client.close client)]
-    (.a.take (.client.transact client
-                               (:kp (first ps))
-                               (.trx.new.invoke #11
-                                                (code.account+ n
-                                                               (+ 45
-                                                                  (dec (count ps))))
-                                                {:sequence (.a.take (.client.sequence client
-                                                                                      #11))}))
+    (loop [seq         (.a.take (.client.sequence client
+                                                  #11))
+           n.remaining n]
+      (when (> n.remaining
+               0)
+        (let [n.create (min n.remaining
+                            250)]
+          (.log.info* (str "Creating " n.create " accounts"))
+          (.a.take (.client.transact client
+                                     (:kp (first ps))
+                                     (.trx.new.invoke #11
+                                                      (code.account+ n.create
+                                                                     (+ 45
+                                                                        (- n
+                                                                           n.remaining)
+                                                                        (dec (count ps))))
+                                                      {:sequence seq}))
 
-             10000
-             :timeout)))
+                   10000
+                   :timeout)
+          (recur (inc seq)
+                 (- n.remaining
+                    n.create)))))))
  
 
 
