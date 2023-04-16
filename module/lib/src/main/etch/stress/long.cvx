@@ -46,12 +46,14 @@
                 16)
     (fail :ARGUMENT
           "Number of Longs per tuple must be >= 1 and <= 16"))
+  (.log.info* (str "Number of iterations = " n.iter))
+  (.log.info* (str "Number of Longs / tuple = " n.long))
   (let [db.size  (.db.size)
         _        (.log.info* "Estimating overhead")
         overhead (overhead.cycle n.long)
-        _        (.log.info* (str "Overhead estimation: " overhead " nanos / tuple"))
+        _        (.log.info* (str "Overhead estimation = " overhead " nanos / tuple"))
         _        (.log.info* "Measuring writes")
-        [nano
+        [nano+
          _]      (.time.do*
                    (loop [i.iter 0]
                      (when (< i.iter
@@ -62,14 +64,21 @@
         _        (.db.flush)
         byte+    (- (.db.size)
                     db.size)
+        second+  (/ nano+
+                    1e9)
         bps      (* (/ byte+
-                      (- nano
+                      (- nano+
                          (* n.iter
                             overhead)))
-                   1e9)]
-    {:bps     bps
-     :byte+   byte+
-     :n.iter  n.iter
-     :n.long  n.long
-     :nano    nano
+                    1e9)]
+    (.log.info* "RESULTS")
+    (.log.info* (str "Test duration (with overhead) = " second+))
+    (.log.info* (str "Etch growth = " (/ byte+ 1e6) " MB"))
+    (.log.info* (str "Speed = " (* bps 1e6) " MB / second"))
+    (.log.info* "END OF TEST")
+    {:bps            bps
+     :byte+          byte+
+     :n.iter         n.iter
+     :n.long         n.long
+     :nano           nano+
      :overhead.cycle overhead}))
