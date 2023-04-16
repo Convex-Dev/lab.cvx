@@ -16,6 +16,9 @@
 ;($.etch.stress.long/overhead.cycle 16)
 
 
-($.etch.stress.gen/write 5
-                         (.gen.vector (.gen.any)
-                                      100000))
+(def x
+  ($.etch.stress.gen/write 3
+                           (.gen.vector (.gen.any)
+                                        100000)))
+
+($.etch.stress.gen/integrity x)

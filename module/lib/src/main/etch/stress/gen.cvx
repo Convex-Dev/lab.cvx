@@ -1,37 +1,51 @@
 {:deploy [$.math.stat (lib math stat)]}
 
 
-;;;;;;;;;;
+;;;;;;;;;; Helpers
+
+
+(defn gen
+
+  [i.iter gen]
+
+  (.log.info* (str "Round " i.iter))
+  (.log.info* "Generating data")
+  (.gen gen
+        {:seed i.iter
+         :size 100}))
+  
+
+;;;;;;;;;; Stress testing
 
 
 (defn integrity
 
-  []
+  [result]
 
-  (let [n-item  100000      
-        target? (fn [x]
-                  (and (vector? x)
-                       (= (count x)
-                          n-item)))
-        root    (.db.root.read)
-        error+  (reduce (fn [acc [hash x]]
-                          (if-let [error (if (target? x)
-                                           (let [x-2 (.db.read hash)]
-                                             (if (target? x-2)
-                                               (if (= x-2
-                                                      x)
-                                                 nil
-                                                 :mismatch)
-                                               :bad-read))
-                                           :bad-write)]
-                            (conj acc
-                                  [hash
-                                   error])
-                            acc))
-                        0
-                        root)]
-    [error+
-     (count root)]))
+  (let [gen-   (:gen result)
+        hash+  (:hash+ result)
+        n.iter (:n.iter result)
+        fail   (loop [i.iter 0]
+                 (when (< i.iter
+                          n.iter)
+                   (if (= (.db.read (get hash+
+                                         i.iter))
+                          (gen i.iter
+                               gen-))
+                     (recur (inc i.iter))
+                     [i.iter
+                      cell.read])))]
+    (if fail
+      (let [[i.iter
+             cell]  fail]
+
+        (.log.info* (str "FAIL, bad data for round " i.iter " = " cell))
+        (assoc result
+               :fail.cell cell
+               :fail.iter i.iter))
+      (do
+        (.log.info* "OK, all data has been retrieved successfully")
+        result))))
 
 
 
@@ -42,8 +56,9 @@
   (when-not (.db.path)
     (.db.open (.fs.tmp)))
   (let [db.size (.db.size)]
-    (loop [nano+  []
-           i.iter 0]
+    (loop [hash+  []
+           i.iter 0
+           nano+  []]
       (if (< i.iter
              n.iter)
         (let [_     (.log.info* (str "Round " i.iter))
@@ -53,13 +68,15 @@
                            :size 100})
              _      (.log.info* "Persisting generated data")
              [t
-              hash] (.time.do*
+              x-2]  (.time.do*
                       (let [hash (.db.write x)]
                         ;(.db.flush)
                         hash))]
-          (recur (conj nano+
-                       t)
-                 (inc i.iter)))
+          (recur (conj hash+
+                       (hash (encoding x-2)))
+                 (inc i.iter)
+                 (conj nano+
+                       t)))
         (do
           (.db.flush)
           (let [nano     (reduce +
@@ -75,5 +92,8 @@
             (.log.info* "---")
             (.log.info* (str "Etch growth = " (/ byte+ 1e6) " MB"))
             (.log.info* (str "Speed = " (/ bps 1e6) " MB / second"))
-            {:bps  bps
-             :nano nano}))))))
+            {:bps    bps
+             :hash+  hash+
+             :gen    gen
+             :n.iter n.iter
+             :nano   nano}))))))
