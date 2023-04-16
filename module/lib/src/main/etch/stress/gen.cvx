@@ -17,7 +17,11 @@
            n-iter)
       (let [_     (.log.info* (str "Round " i))
             _     (.log.info* "Generating data")
-            x     (.gen (.gen.vector (.gen.such-that (fn [x]
+            x     (.gen (.gen.vector (.gen.tuple [(.gen.long) (.gen.long)])
+                                     ;(.gen.blob 64)
+                                     10000)
+
+                       #_(.gen.vector (.gen.such-that (fn [x]
                                                        (not (nil? x)))
                                                      (.gen.any))
                                      100000)
