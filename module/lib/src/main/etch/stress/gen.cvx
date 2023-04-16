@@ -6,13 +6,14 @@
 
 (defn gen
 
-  [i.iter gen]
+  [i.iter gen seed size]
 
-  (.log.info* (str "Round " i.iter))
+  (.log.info* (str "Iteration " i.iter))
   (.log.info* "Generating data")
   (.gen gen
-        {:seed i.iter
-         :size 100}))
+        {:seed (+ i.iter
+                  seed)
+         :size size}))
   
 
 ;;;;;;;;;; Stress testing
@@ -25,75 +26,67 @@
   (let [gen-   (:gen result)
         hash+  (:hash+ result)
         n.iter (:n.iter result)
-        fail   (loop [i.iter 0]
-                 (when (< i.iter
-                          n.iter)
-                   (if (= (.db.read (get hash+
-                                         i.iter))
-                          (gen i.iter
-                               gen-))
-                     (recur (inc i.iter))
-                     [i.iter
-                      cell.read])))]
-    (if fail
-      (let [[i.iter
-             cell]  fail]
-
-        (.log.info* (str "FAIL, bad data for round " i.iter " = " cell))
-        (assoc result
-               :fail.cell cell
-               :fail.iter i.iter))
-      (do
-        (.log.info* "OK, all data has been retrieved successfully")
-        result))))
+        seed   (:seed result)
+        size   (:size result)]
+    (loop [i.iter 0]
+      (when (< i.iter
+               n.iter)
+        (let [hash.target (get hash+
+                               i.iter)
+              cell        (.db.read hash.target)]
+          (if (= cell
+                 (gen i.iter
+                      gen-
+                      seed
+                      size))
+            (recur (inc i.iter))
+            [i.iter
+             hash.target
+             (hash (encoding cell))]))))))
 
 
 
 (defn write
 
-  [n.iter gen]
+  [option+]
 
   (when-not (.db.path)
     (.db.open (.fs.tmp)))
-  (let [db.size (.db.size)]
-    (loop [hash+  []
-           i.iter 0
-           nano+  []]
+  (let [n.iter  (or (:n.iter option+)
+                    5)
+        gen-    (or (:gen option+)
+                    (.gen.vector (.gen.any)
+                                 50000))
+        db.size (.db.size)
+        seed    (or (:seed option+)
+                    0)
+        size    (or (:size option+)
+                    30)]
+    (.log.info* (str "Number of iterations = " n.iter))
+    (.log.info* (str "Seed = " seed))
+    (.log.info* (str "Size = " size))
+    (loop [hash+   []
+           i.iter  0
+           n.nano+ []]
       (if (< i.iter
              n.iter)
-        (let [_     (.log.info* (str "Round " i.iter))
-              _     (.log.info* "Generating data")
-              x     (.gen gen
-                          {:seed i.iter
-                           :size 100})
-             _      (.log.info* "Persisting generated data")
+        (let [cell    (gen i.iter
+                           gen-
+                           seed
+                           size)
+             _        (.log.info* "Persisting generated data")
              [t
-              x-2]  (.time.do*
-                      (let [hash (.db.write x)]
-                        ;(.db.flush)
-                        hash))]
+              cell-2] (.time.do* (.db.write cell))]
           (recur (conj hash+
-                       (hash (encoding x-2)))
+                       (hash (encoding cell-2)))
                  (inc i.iter)
-                 (conj nano+
+                 (conj n.nano+
                        t)))
-        (do
-          (.db.flush)
-          (let [nano     (reduce +
-                                 0
-                                 nano+)
-                byte+    (- (.db.size)
-                            db.size)
-                bps      (* (/ byte+
-                               nano)
-                            1e9)
-
-                            ]
-            (.log.info* "---")
-            (.log.info* (str "Etch growth = " (/ byte+ 1e6) " MB"))
-            (.log.info* (str "Speed = " (/ bps 1e6) " MB / second"))
-            {:bps    bps
-             :hash+  hash+
-             :gen    gen
-             :n.iter n.iter
-             :nano   nano}))))))
+        {:hash+  hash+
+         :gen    gen-
+         :n.iter n.iter
+         :n.nano (reduce +
+                         0
+                         n.nano+)
+         :seed   seed
+         :size   size}))))

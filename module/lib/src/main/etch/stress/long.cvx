@@ -41,93 +41,57 @@
 
   [result]
 
-  (.log.info* "Ensure Etch integrity after Long Tuple stress test")
   (let [n.iter (:n.iter result)
         n.long (:n.long result)]
-    (.log.info* (str "Number of iterations = " n.iter))
-    (.log.info* (str "Number of Longs / tuple = " n.long))
     (.log.info* "Running iterations")
-    (let [fail (loop [i.iter 0]
-                 (when (< i.iter
-                          n.iter)
-                   (let [t    (tuple n.long
-                                     i.iter)
-                         cell (.db.read (hash (encoding t)))]
-                     (if (= cell
-                            t)
-                       (recur (inc i.iter))
-                       [i.iter
-                        cell]))))]
-      (if fail
-        (let [[i.iter
-               cell]  fail]
-          (.log.info* (str "FAIL, bad data for tuple " i.iter " = " cell))
-          (assoc result
-                 :fail.cell cell
-                 :fail.iter i.iter))
-        (do
-          (.log.info* "OK, all data has been retrieved successfully")
-          result)))))
+    (loop [i.iter 0]
+      (when (< i.iter
+               n.iter)
+        (let [tuple-      (tuple n.long
+                                 i.iter)
+              hash.target (hash (encoding tuple-))
+              cell        (.db.read hash.target)]
+          (if (= cell
+                 tuple-)
+            (recur (inc i.iter))
+            [i.iter
+             hash.target
+             (hash (encoding cell))]))))))
 
 
 
 (defn write
 
-  [n.iter n.long]
+  [option+]
 
   (when-not (.db.path)
     (.db.open (.fs.tmp)))
-  (when-not (<= 1
-                n.long
-                16)
-    (fail :ARGUMENT
-          "Number of Longs per tuple must be >= 1 and <= 16"))
-  (.log.info* "Starting Long Tuple stress test for Etch")
-  (.log.info* (str "Number of iterations = " n.iter))
-  (.log.info* (str "Number of Longs / tuple = " n.long))
-  (let [db.size  (.db.size)
-        _        (.log.info* "Estimating overhead")
-        overhead (overhead.cycle n.long)
-        _        (.log.info* (str "Overhead estimation = " overhead " nanos / tuple"))
-        _        (.log.info* "Measuring writes")
-        [nano+
-         _]      (.time.do*
-                   (loop [i.iter 0]
-                     (when (< i.iter
-                              n.iter)
-                       (.db.write (tuple n.long
-                                         i.iter))
-                       (recur (inc i.iter)))))
-        _        (.db.flush)
-        byte+    (- (.db.size)
-                    db.size)
-        second+  (/ nano+
-                    1e9)
-        bps      (* (/ byte+
-                       (- nano+
-                          (* n.iter
-                             overhead)))
-                    1e9)]
-    (.log.info* "---")
-    (.log.info* (str "Test duration (with overhead) = " second+ " seconds"))
-    (.log.info* (str "Etch growth = " (/ byte+ 1e6) " MB"))
-    (.log.info* (str "Speed = " (/ bps 1e6) " MB / second"))
-    {:bps            bps
-     :byte+          byte+
-     :n.iter         n.iter
-     :n.long         n.long
-     :nano           nano+
-     :overhead.cycle overhead}))
-
-
-;;;
-
-
-(defn run
-
-  [n.iter n.long]
-
-  (let [result (write n.iter
-                      n.long)]
-    (.log.info* "===")
-    (integrity result)))
+  (let [n.iter (or (:n.iter option+)
+                   1000000)
+        n.long (or (:n.long option+)
+                   8)]
+    (when-not (<= 1
+                  n.long
+                  16)
+      (fail :ARGUMENT
+            "Number of Longs per tuple must be >= 1 and <= 16"))
+    (.log.info* (str "Number of iterations = " n.iter))
+    (.log.info* (str "Number of Longs / tuple = " n.long))
+    (let [db.size  (.db.size)
+          _        (.log.info* "Estimating overhead")
+          overhead (overhead.cycle n.long)
+          _        (.log.info* (str "Overhead estimation = " overhead " nanos / tuple"))
+          _        (.log.info* "Measuring writes")
+          [n.nano
+           _]      (.time.do*
+                     (loop [i.iter 0]
+                       (when (< i.iter
+                                n.iter)
+                         (.db.write (tuple n.long
+                                           i.iter))
+                         (recur (inc i.iter)))))]
+      {:n.iter   n.iter
+       :n.long   n.long
+       :n.nano   n.nano
+       :overhead (* n.iter
+                    overhead)})))

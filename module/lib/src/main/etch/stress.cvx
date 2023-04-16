@@ -1,0 +1,60 @@
+{}
+
+
+;;;;;;;;;; Stress testing
+
+
+(defn integrity
+
+  [addr result]
+
+  (.log.info* "Starting integrity check")
+  (if-let [fail (addr/integrity result)]
+    (let [[i.iter
+           hash.target
+           hash.read]  fail]
+      (.log.error* (str "FAIL, bad read for iteration " i.iter))
+      (.log.error* (str "Target hash = 0x" hash.target))
+      (.log.error* (str "Read hash = 0x" hash.read))
+      (assoc result
+             :fail.iter        i.iter
+             :fail.hash.read   hash.read
+             :fail.hash.target hash.target))
+    (do
+      (.log.info* "OK, all data has been retrieved successfully")
+      result)))
+
+
+
+(defn write
+
+  [addr option+]
+
+  (.log.info* "Starting write phase")
+  (let [db.size (.db.size)
+        result  (addr/write option+)
+        n.byte  (- (.db.size)
+                    db.size)
+        n.nano   (:n.nano result)
+        bps      (* (/ n.byte
+                       (- n.nano
+                          (or (:overhead result)
+                              0)))
+                    1e9)]
+    (.log.info* (str "Etch growth = " (/ n.byte 1e6) " MB"))
+    (.log.info* (str "Speed = " (/ bps 1e6) " MB / second"))
+    (assoc result
+           :bps    bps
+           :n.byte n.byte)))
+
+
+;;;
+
+
+(defn run
+
+  [addr option+]
+
+  (integrity addr
+             (write addr
+                    option+)))

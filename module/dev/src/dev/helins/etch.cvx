@@ -1,4 +1,5 @@
-{:deploy [$.etch.stress.gen  (lib etch stress gen)
+{:deploy [$.etch.stress      (lib etch stress)
+          $.etch.stress.gen  (lib etch stress gen)
           $.etch.stress.long (lib etch stress long)]}
 
 
@@ -11,14 +12,25 @@
 
 ;($.etch.stress.gen/write 2500)
 
-;($.etch.stress.long/run 20000000 2)
 
-;($.etch.stress.long/overhead.cycle 16)
+#_($.etch.stress/run $.etch.stress.long
+                   {:n.iter 20000000
+                    :n.long 2})
+
+#_($.etch.stress/run $.etch.stress.gen
+                   {:gen    (.gen.vector (.gen.vector (.gen.long)
+                                                      2)
+                                         100)
+                    :n.iter 10
+                   })
 
 
-(def x
-  ($.etch.stress.gen/write 3
-                           (.gen.vector (.gen.any)
-                                        100000)))
+#_($.etch.stress/run $.etch.stress.gen
+                   {:gen    (.gen.vector (.gen.blob 32)
+                                         1000000)
+                    :n.iter 5})
+                    
 
-($.etch.stress.gen/integrity x)
+($.etch.stress/run $.etch.stress.gen
+                   {:n.iter 260
+                    :size   100})
