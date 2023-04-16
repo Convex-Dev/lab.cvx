@@ -1,0 +1,9 @@
+{:deploy [$.etch.integrity (lib etch integrity)]}
+
+
+;;;;;;;;;;
+
+
+(.log.level.set :info)
+
+($.etch.integrity/write 1)

@@ -1,4 +1,4 @@
-{}
+{:deploy [$.math.stat (lib math stat)]}
 
 
 ;;;;;;;;;;
@@ -15,16 +15,20 @@
          size+     []]
     (if (< i
            n-iter)
-      (let [x     (.gen (.gen.vector (.gen.such-that (fn [x]
+      (let [_     (.log.info* (str "Round " i))
+            _     (.log.info* "Generating data")
+            x     (.gen (.gen.vector (.gen.such-that (fn [x]
                                                        (not (nil? x)))
-                                                     .gen.any)
+                                                     (.gen.any))
                                      100000)
                         {:size 100})
+           _      (.log.info* "Persisting generated data")
            [nano+
             hash] (.time.do*
                     (let [hash (.db.write x)]
-                      (.db.flush)
+                      ;(.db.flush)
                       hash))]
+        (.log.info* "Persisting diagnostic data at the root")
         (.db.root.write (conj (or (.db.root.read)
                                   [])
                               [hash
@@ -35,8 +39,8 @@
                (inc i)
                (conj size+
                      (.cell.size x))))
-      (let [duration (stddev duration+)
-            size     (stddev size+)]
+      (let [duration ($.math.stat/stddev duration+)
+            size     ($.math.stat/stddev size+)]
         {:bps      (long (* (/ (:avg size)
                                (:avg duration))
                             1e9))

@@ -1,6 +1,6 @@
 {:deps {bad       [:relative "module/bad/src/main"]
         bad.test  [:relative "module/bad/src/test"]
-        dev       [:relative "private/cvx"]
+        dev       [:relative "module/dev/src/dev"]
         example   [:relative "module/example/src/main"]
         lib       [:relative "module/lib/src/main"]
         test      [:relative "module/lib/src/test"]}}
