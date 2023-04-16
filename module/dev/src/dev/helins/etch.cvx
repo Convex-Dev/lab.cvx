@@ -1,4 +1,5 @@
-{:deploy [$.etch.stress.gen (lib etch stress gen)]}
+{:deploy [$.etch.stress.gen  (lib etch stress gen)
+          $.etch.stress.long (lib etch stress long)]}
 
 
 ;;;;;;;;;;
@@ -8,4 +9,5 @@
 (.fs.delete "/tmp/etch")
 (.db.open "/tmp/etch")
 
-($.etch.stress.gen/write 2500)
+;($.etch.stress.gen/write 2500)
+($.etch.stress.long/write 1000000 2)
