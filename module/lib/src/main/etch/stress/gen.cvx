@@ -4,56 +4,7 @@
 ;;;;;;;;;;
 
 
-(defn write
-
-  [n-iter]
-
-  (when-not (.db.path)
-    (.db.open (.fs.tmp)))
-  (loop [duration+ []
-         i         0
-         size+     []]
-    (if (< i
-           n-iter)
-      (let [_     (.log.info* (str "Round " i))
-            _     (.log.info* "Generating data")
-            x     (.gen (.gen.vector (.gen.tuple [(.gen.long) (.gen.long)])
-                                     ;(.gen.blob 64)
-                                     10000)
-
-                       #_(.gen.vector (.gen.such-that (fn [x]
-                                                       (not (nil? x)))
-                                                     (.gen.any))
-                                     100000)
-                        {:size 100})
-           _      (.log.info* "Persisting generated data")
-           [nano+
-            hash] (.time.do*
-                    (let [hash (.db.write x)]
-                      ;(.db.flush)
-                      hash))]
-        (.log.info* "Persisting diagnostic data at the root")
-        (.db.root.write (conj (or (.db.root.read)
-                                  [])
-                              [hash
-                               x]))
-        (.db.flush)
-        (recur (conj duration+
-                     nano+)
-               (inc i)
-               (conj size+
-                     (.cell.size x))))
-      (let [duration ($.math.stat/stddev duration+)
-            size     ($.math.stat/stddev size+)]
-        {:bps      (long (* (/ (:avg size)
-                               (:avg duration))
-                            1e9))
-         :duration duration
-         :size+    size}))))
-
-
-
-(defn check
+(defn integrity
 
   []
 
@@ -81,3 +32,48 @@
                         root)]
     [error+
      (count root)]))
+
+
+
+(defn write
+
+  [n.iter gen]
+
+  (when-not (.db.path)
+    (.db.open (.fs.tmp)))
+  (let [db.size (.db.size)]
+    (loop [nano+  []
+           i.iter 0]
+      (if (< i.iter
+             n.iter)
+        (let [_     (.log.info* (str "Round " i.iter))
+              _     (.log.info* "Generating data")
+              x     (.gen gen
+                          {:seed i.iter
+                           :size 100})
+             _      (.log.info* "Persisting generated data")
+             [t
+              hash] (.time.do*
+                      (let [hash (.db.write x)]
+                        ;(.db.flush)
+                        hash))]
+          (recur (conj nano+
+                       t)
+                 (inc i.iter)))
+        (do
+          (.db.flush)
+          (let [nano     (reduce +
+                                 0
+                                 nano+)
+                byte+    (- (.db.size)
+                            db.size)
+                bps      (* (/ byte+
+                               nano)
+                            1e9)
+
+                            ]
+            (.log.info* "---")
+            (.log.info* (str "Etch growth = " (/ byte+ 1e6) " MB"))
+            (.log.info* (str "Speed = " (/ bps 1e6) " MB / second"))
+            {:bps  bps
+             :nano nano}))))))
