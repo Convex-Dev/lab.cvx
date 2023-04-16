@@ -10,4 +10,6 @@
 (.db.open "/tmp/etch")
 
 ;($.etch.stress.gen/write 2500)
-($.etch.stress.long/write 1000000 2)
+($.etch.stress.long/write 1000000 16)
+
+;($.etch.stress.long/overhead.cycle 16)

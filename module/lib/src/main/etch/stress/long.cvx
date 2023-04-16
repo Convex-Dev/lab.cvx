@@ -4,6 +4,37 @@
 ;;;;;;;;;;
 
 
+(defn tuple
+
+  [n.long i.iter]
+
+  (loop [v      [i.iter]]
+    (if (< (count v) 
+           n.long)
+      (recur (conj v
+                   i.iter))
+      v)))
+
+
+
+(defn overhead.cycle
+
+  [n.long]
+
+  (let [n.iter 1e6
+        [nano
+         _]    (.time.do*
+                 (loop [i.iter 0]
+                   (when (< i.iter
+                            n.iter)
+                     (tuple n.long
+                            i.iter)
+                     (recur (inc i.iter)))))]
+    (/ nano
+       n.iter)))
+  
+
+
 (defn write
 
   [n.iter n.long]
@@ -15,29 +46,30 @@
                 16)
     (fail :ARGUMENT
           "Number of Longs per tuple must be >= 1 and <= 16"))
-  (let [db.size (.db.size)
+  (let [db.size  (.db.size)
+        _        (.log.info* "Estimating overhead")
+        overhead (overhead.cycle n.long)
+        _        (.log.info* (str "Overhead estimation: " overhead " nanos / tuple"))
+        _        (.log.info* "Measuring writes")
         [nano
-         _]     (.time.do*
-                  (loop [i.iter 0]
-                    (when (< i.iter
-                             n.iter)
-                      ;(.db.write [i.iter i.iter])
-                      (.db.write
-                        (loop [v      [i.iter]]
-                          (if (< (count v) 
-                                 n.long)
-                            (recur (conj v
+         _]      (.time.do*
+                   (loop [i.iter 0]
+                     (when (< i.iter
+                              n.iter)
+                       (.db.write (tuple n.long
                                          i.iter))
-                            v)))
-                      (recur (inc i.iter)))))
-        _       (.db.flush)
-        byte+   (- (.db.size)
-                   db.size)]
-    {:bps     (* (/ byte+
-                    nano)
-                 1e9)
+                       (recur (inc i.iter)))))
+        _        (.db.flush)
+        byte+    (- (.db.size)
+                    db.size)
+        bps      (* (/ byte+
+                      (- nano
+                         (* n.iter
+                            overhead)))
+                   1e9)]
+    {:bps     bps
      :byte+   byte+
      :n.iter  n.iter
      :n.long  n.long
-     :nano    nano}
-    ))
+     :nano    nano
+     :overhead.cycle overhead}))
