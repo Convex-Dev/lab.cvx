@@ -18,9 +18,10 @@
                     :n.long 16})
 
 ($.etch.stress/run $.etch.stress.gen
-                   {:n.byte.min 60000000
-                    :n.iter     5
-                    :gen        (.gen.any)})
+                   {:write.size.total 5e7
+                    :write.size.cell  10000000
+                    ;:n.iter           100
+                    :gen              (.gen.blob-32)})
                     
 
 #_($.etch.stress/run $.etch.stress.gen

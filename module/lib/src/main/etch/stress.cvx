@@ -1,6 +1,18 @@
 {}
 
 
+;;;;;;;;;; Helpers
+
+
+(defn write.size.total?
+
+  [option+]
+
+  (>= (- (.db.size)
+         (:etch.size.start option+))
+      (:write.size.total option+)))
+
+
 ;;;;;;;;;; Stress testing
 
 
@@ -36,14 +48,18 @@
     (do
       (.log.info* "Opening new Etch instance at temporary location")
       (.db.open (.fs.tmp))))
-  (let [etch.path       (.db.path)
-        _               (.log.info* (str "Etch path = " etch.path))
-        etch.size.start (.db.size)
-        result          (addr/write (assoc option+
-                                           :etch.path       etch.path
-                                           :etch.size.start etch.size.start))
-        n.byte          (- (.db.size)
-                            etch.size.start)
+  (let [etch.path        (.db.path)
+        _                (.log.info* (str "Etch path = " etch.path))
+        write.size.total (or (:write.size.total option+)
+                             1e10)
+        _                (.log.info* (str "Etch growth target = " (/ write.size.total 1e9) " GB"))
+        etch.size.start  (.db.size)
+        result           (addr/write (assoc option+
+                                            :etch.path        etch.path
+                                            :etch.size.start  etch.size.start
+                                            :write.size.total write.size.total))
+        n.byte           (- (.db.size)
+                             etch.size.start)
         n.nano           (:n.nano result)
         bps              (* (/ n.byte
                                (- n.nano

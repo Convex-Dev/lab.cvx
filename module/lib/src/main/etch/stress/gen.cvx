@@ -1,4 +1,5 @@
-{:deploy [$.math.stat (lib math stat)]}
+{:deploy [$.etch.stress (lib etch stress)
+          $.math.stat   (lib math stat)]}
 
 
 ;;;;;;;;;; Helpers
@@ -6,21 +7,21 @@
 
 (defn gen
 
-  [i.iter gen seed size n.byte.min]
+  [i.iter gen gen.seed gen.size write.size.cell]
 
-  (.log.info* (str "Iteration " i.iter))
+  (.log.info* (str "Iteration " (inc i.iter)))
   (.log.info* "Generating data")
-  (loop [cell   []
-         seed-2 seed]
+  (loop [cell       []
+         gen.seed-2 gen.seed]
     (if (< (.cell.size cell)
-           n.byte.min)
+           write.size.cell)
       (recur (conj cell
                    (.gen gen
-                         {:seed seed-2
-                          :size size}))
-             (inc seed-2))
+                         {:seed gen.seed-2
+                          :size gen.size}))
+             (inc gen.seed-2))
       [cell
-       seed-2])))
+       gen.seed-2])))
   
 
 ;;;;;;;;;; Stress testing
@@ -30,28 +31,28 @@
 
   [result]
 
-  (let [gen-       (:gen result)
-        hash+      (:hash+ result)
-        n.byte.min (:n.byte.min result)
-        n.iter     (:n.iter result)
-        size       (:size result)]
-    (loop [i.iter 0
-           seed   (:seed result)]
+  (let [gen-            (:gen result)
+        gen.size        (:gen.size result)
+        hash+           (:hash+ result)
+        n.iter          (count hash+)
+        write.size.cell (:write.size.cell result)]
+    (loop [i.iter   0
+           gen.seed (:gen.seed result)]
       (when (< i.iter
                n.iter)
         (let [hash.target  (get hash+
                                 i.iter)
               cell.read    (.db.read hash.target)
               [cell.target
-               seed-2]     (gen i.iter
+               gen.seed-2] (gen i.iter
                                 gen-
-                                seed
-                                size
-                                n.byte.min)]
+                                gen.seed
+                                gen.size
+                                write.size.cell)]
           (if (= cell.read
                  cell.target)
             (recur (inc i.iter)
-                   seed-2)
+                   gen.seed-2)
             [i.iter
              hash.target
              (hash (encoding cell.read))]))))))
@@ -62,48 +63,51 @@
 
   [option+]
 
-  (let [n.iter     (or (:n.iter option+)
-                       5)
-        gen-       (or (:gen option+)
-                       (.gen.vector (.gen.any)
-                                    50000))
-        n.byte.min (or (:n.byte.min option+)
-                       10000000)
-        seed       (or (:seed option+)
-                       0)
-        size       (or (:size option+)
-                       30)]
-    (.log.info* (str "Number of iterations = " n.iter))
-    (.log.info* (str "Minimum cell size = " (/ n.byte.min 1e6) " MB / write"))
-    (.log.info* (str "Seed = " seed))
-    (.log.info* (str "Size = " size))
-    (loop [hash+   []
-           i.iter  0
-           n.nano+ []
-           seed-2  seed]
-      (if (< i.iter
-             n.iter)
+  (let [n.iter          (:n.iter option+)
+        _               (when n.iter
+                          (.log.info* (str "Maximum number of iterations = " n.iter)))
+        n.iter-2        (or n.iter
+                            9223372036854775807)
+        gen-            (or (:gen option+)
+                            (.gen.vector (.gen.any)
+                                         50000))
+        gen.seed        (or (:gen.seed option+)
+                            0)
+        gen.size        (or (:gen.size option+)
+                            30)
+        write.size.cell (or (:write.size.cell option+)
+                            10000000)]
+    (.log.info* (str "Minimum cell size = " (/ write.size.cell 1e6) " MB / write"))
+    (.log.info* (str "Gen seed = " gen.seed))
+    (.log.info* (str "Gen size = " gen.size))
+    (loop [hash+      []
+           i.iter     0
+           n.nano+    []
+           gen.seed-2 gen.seed]
+      (if (and (< i.iter
+                  n.iter-2)
+               (not ($.etch.stress/write.size.total? option+)))
         (let [[cell
-               seed-3] (gen i.iter
-                            gen-
-                            seed-2
-                            size
-                            n.byte.min)
-             _         (.log.info* "Persisting generated data")
+               gen.seed-3] (gen i.iter
+                                gen-
+                                gen.seed-2
+                                gen.size
+                                write.size.cell)
+             _             (.log.info* "Persisting generated data")
              [t
-              cell-2]  (.time.do* (.db.write cell))]
+              cell-2]      (.time.do* (.db.write cell))]
           (recur (conj hash+
                        (hash (encoding cell-2)))
                  (inc i.iter)
                  (conj n.nano+
                        t)
-                 seed-3))
-        {:hash+      hash+
-         :gen        gen-
-         :n.byte.min n.byte.min
-         :n.iter     n.iter
-         :n.nano     (reduce +
-                             0
-                             n.nano+)
-         :seed       seed
-         :size       size}))))
+                 gen.seed-3))
+        {:hash+    hash+
+         :gen      gen-
+         :gen.seed gen.seed
+         :gen.size gen.size
+         :n.iter   n.iter
+         :n.nano   (reduce +
+                           0
+                           n.nano+)
+                           :write.size.cell write.size.cell}))))
