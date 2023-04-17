@@ -80,6 +80,12 @@
 
   [addr option+]
 
+  (.log.info* (str "Machine architecture = " (.sys.arch)))
+  (let [os (.sys.os)]
+    (.log.info* (str "OS = " (first os) " " (second os))))
+  (.log.info* (str "Java version = " (first .sys.version.java) " " (second .sys.version.java)))
+  (.log.info* (str "Convex version = " .sys.version.convex))
+  (.log.info* (str "Shell version = " (str .sys.version.shell)))
   (integrity addr
              (write addr
                     option+)))
