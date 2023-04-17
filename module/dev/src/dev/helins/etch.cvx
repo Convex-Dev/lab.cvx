@@ -6,7 +6,7 @@
 ;;;;;;;;;;
 
 
-;(.log.level.set :info)
+(.log.level.set :info)
 (.fs.delete "/tmp/etch")
 (.db.open "/tmp/etch")
 
@@ -15,16 +15,17 @@
                    {:n.long           2
                     :write.size.total 50e9})
 
-#_($.etch.stress/run $.etch.stress.gen
-                   {:write.size.total 5e7
-                    :write.size.cell  10000000
+($.etch.stress/run $.etch.stress.gen
+                   {:etch.size.survey 100e6
+                    :write.size.cell  10e6
+                    :write.size.total 1e9
                     :gen              (.gen.blob-32)})
 
 #_($.etch.stress/run $.etch.stress.gen
                    {:n.iter 260
                     :size   100})
 
-($.etch.stress/run.process "foo"
+#_($.etch.stress/run.process "foo"
                            '(lib etch stress long)
                            {:n.long           2
                             :write.size.total 20e6})

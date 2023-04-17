@@ -4,13 +4,64 @@
 ;;;;;;;;;; Helpers
 
 
+(defn avg.speed
+
+  [result]
+
+  (let [etch.size.growth (- (.db.size)
+                            (:etch.size.start result))
+        n.nano           (:n.nano result)
+        bps              (* (/ etch.size.growth
+                               (- n.nano
+                                  (or (:overhead result)
+                                      0)))
+                            1e9)]
+   [bps
+    etch.size.growth]))
+
+
+
+(defn avg.speed.current
+
+  [result]
+
+  (let [etch.size.now (.db.size)]
+    (if (>= (- etch.size.now
+               (or (:etch.size.last result)
+                   (:etch.size.start result)))
+            (:etch.size.survey result))
+      (let [[bps
+             etch.size.growth] (avg.speed result)]
+        (.log.info* (str "Current Etch growth = " (/ etch.size.growth 1e6) " MB"))
+        (.log.info* (str "Current average speed = " (/ bps 1e6) " MB / second"))
+        (assoc result
+               :etch.size.last
+               etch.size.now))
+      result)))
+
+
+
+(defn avg.speed.total
+
+  [result]
+
+  (let [[bps
+         etch.size.growth] (avg.speed result)]
+    (.log.info* (str "Total Etch growth = " (/ etch.size.growth 1e6) " MB"))
+    (.log.info* (str "Total average speed = " (/ bps 1e6) " MB / second"))
+    (assoc result
+           :bps              bps
+           :etch.size.growth etch.size.growth)))
+
+
+
 (defn write.size.total?
 
-  [option+]
+  [result]
 
   (>= (- (.db.size)
-         (:etch.size.start option+))
-      (:write.size.total option+)))
+         (:etch.size.start result))
+      (:write.size.total result)))
 
 
 ;;;;;;;;;; Stress testing
@@ -53,24 +104,19 @@
         write.size.total (or (:write.size.total option+)
                              1e10)
         _                (.log.info* (str "Etch growth target = " (/ write.size.total 1e9) " GB"))
+        etch.size.survey (or (:etch.size.survey option+)
+                             (min (/ write.size.total
+                                     10)
+                                  1e9))
+        _                (.log.info* (str "Speed monitored every " (/ etch.size.survey 1e6) " MB (minimum)"))
         etch.size.start  (.db.size)
         result           (addr/write (assoc option+
                                             :etch.path        etch.path
                                             :etch.size.start  etch.size.start
-                                            :write.size.total write.size.total))
-        n.byte           (- (.db.size)
-                             etch.size.start)
-        n.nano           (:n.nano result)
-        bps              (* (/ n.byte
-                               (- n.nano
-                                  (or (:overhead result)
-                                      0)))
-                            1e9)]
-    (.log.info* (str "Etch growth = " (/ n.byte 1e6) " MB"))
-    (.log.info* (str "Average speed = " (/ bps 1e6) " MB / second"))
-    (assoc result
-           :bps    bps
-           :n.byte n.byte)))
+                                            :etch.size.survey etch.size.survey
+                                            :write.size.total write.size.total))]
+    (.log.info* "End of write phase")
+    (avg.speed.total result)))
 
 
 ;;;

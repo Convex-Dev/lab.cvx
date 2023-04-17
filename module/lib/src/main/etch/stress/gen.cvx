@@ -81,8 +81,10 @@
     (.log.info* (str "Gen size = " gen.size))
     (loop [hash+      []
            i.iter     0
-           n.nano+    []
-           gen.seed-2 gen.seed]
+           gen.seed-2 gen.seed
+           result     (assoc option+
+                             :n.nano
+                             0)]
       (if (and (< i.iter
                   n.iter-2)
                (not ($.etch.stress/write.size.total? option+)))
@@ -93,20 +95,20 @@
                                 gen.size
                                 write.size.cell)
              _             (.log.info* "Persisting generated data")
-             [t
+             [n.nano
               cell-2]      (.time.do* (.db.write cell))]
           (recur (conj hash+
                        (hash (encoding cell-2)))
                  (inc i.iter)
-                 (conj n.nano+
-                       t)
-                 gen.seed-3))
-        {:hash+    hash+
-         :gen      gen-
-         :gen.seed gen.seed
-         :gen.size gen.size
-         :n.iter   n.iter
-         :n.nano   (reduce +
-                           0
-                           n.nano+)
-                           :write.size.cell write.size.cell}))))
+                 gen.seed-3
+                 ($.etch.stress/avg.speed.current (assoc result
+                                                         :n.nano
+                                                         (+ (:n.nano result)
+                                                            n.nano)))))
+        (assoc result
+               :hash+           hash+
+               :gen             gen-
+               :gen.seed        gen.seed
+               :gen.size        gen.size
+               :n.iter          n.iter
+               :write.size.cell write.size.cell)))))
