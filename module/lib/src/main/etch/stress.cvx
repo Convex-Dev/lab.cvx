@@ -67,7 +67,7 @@
                                       0)))
                             1e9)]
     (.log.info* (str "Etch growth = " (/ n.byte 1e6) " MB"))
-    (.log.info* (str "Speed = " (/ bps 1e6) " MB / second"))
+    (.log.info* (str "Average speed = " (/ bps 1e6) " MB / second"))
     (assoc result
            :bps    bps
            :n.byte n.byte)))

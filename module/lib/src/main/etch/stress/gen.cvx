@@ -69,8 +69,7 @@
         n.iter-2        (or n.iter
                             9223372036854775807)
         gen-            (or (:gen option+)
-                            (.gen.vector (.gen.any)
-                                         50000))
+                            (.gen.any))
         gen.seed        (or (:gen.seed option+)
                             0)
         gen.size        (or (:gen.size option+)
