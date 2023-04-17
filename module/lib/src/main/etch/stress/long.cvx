@@ -76,33 +76,35 @@
       (fail :ARGUMENT
             "Number of Longs per tuple must be >= 1 and <= 16"))
     (.log.info* (str "Number of Longs / tuple = " n.long))
-    (let [db.size   (.db.size)
-          overhead  (overhead.iter n.long)
-          _         (.log.info* "Measuring writes")
-          [n.nano
-           n.tuple] (loop [i.iter 0
-                           n.nano 0]
-                      (if ($.etch.stress/write.size.total? option+)
-                        [n.nano
-                         (* 1000000
-                            i.iter)]
-                        (recur (inc i.iter)
-                               (+ n.nano
-                                  (let [i.tuple.iter (* i.iter
-                                                        1000000)]
-                                    (first
-                                      (.time.do*
-                                        (loop [i.tuple 0]
-                                          (when (< i.tuple
-                                                   1000000)
-                                            (.db.write (tuple n.long
-                                                              (+ i.tuple.iter
-                                                                 i.tuple)))
-                                            (recur (inc i.tuple)))))))))))]
-      (.log.info* (str "Number of tuples written = " n.tuple))
-      (merge option+
-             {:n.long   n.long
-              :n.nano   n.nano
-              :n.tuple  n.tuple
-              :overhead (* n.tuple
-                           overhead)}))))
+    (let [db.size  (.db.size)
+          overhead (overhead.iter n.long)
+          _        (.log.info* "Measuring writes")
+          result   (loop [i.iter 0
+                          result option+]
+                     (if ($.etch.stress/write.size.total? option+)
+                       (assoc result
+                              :n.tuple
+                              (* 1000000
+                                 i.iter))
+                       (recur (inc i.iter)
+                              (let [i.tuple.iter (* i.iter
+                                                    1000000)]
+                                ($.etch.stress/avg.speed.current
+                                  (assoc result
+                                         :n.nano   (+ (:n.nano result)
+                                                      (first
+                                                        (.time.do*
+                                                          (loop [i.tuple 0]
+                                                            (when (< i.tuple
+                                                                     1000000)
+                                                              (.db.write (tuple n.long
+                                                                                (+ i.tuple.iter
+                                                                                   i.tuple)))
+                                                              (recur (inc i.tuple)))))))
+                                         :overhead (* 1000000
+                                                      i.iter
+                                                      overhead)))))))]
+      (.log.info* (str "Number of tuples written = " (:n.tuple result)))
+      (assoc result
+             :n.long
+             n.long))))

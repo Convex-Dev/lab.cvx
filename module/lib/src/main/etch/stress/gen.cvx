@@ -82,9 +82,7 @@
     (loop [hash+      []
            i.iter     0
            gen.seed-2 gen.seed
-           result     (assoc option+
-                             :n.nano
-                             0)]
+           result     option+]
       (if (and (< i.iter
                   n.iter-2)
                (not ($.etch.stress/write.size.total? option+)))

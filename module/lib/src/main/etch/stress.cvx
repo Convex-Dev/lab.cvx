@@ -114,6 +114,7 @@
                                             :etch.path        etch.path
                                             :etch.size.start  etch.size.start
                                             :etch.size.survey etch.size.survey
+                                            :n.nano           0
                                             :write.size.total write.size.total))]
     (.log.info* "End of write phase")
     (avg.speed.total result)))
