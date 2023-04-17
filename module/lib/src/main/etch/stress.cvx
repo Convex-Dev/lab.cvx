@@ -89,3 +89,27 @@
   (integrity addr
              (write addr
                     option+)))
+
+
+
+(defn run.process
+
+  ^:private?
+
+  [dir path.impl option+]
+
+  (.process.success?
+    (.process.run `[cvx
+                    (let [actor+         (.dep.deploy '[$.etch.stress (lib etch stress)
+                                                        impl          ~path.impl])
+                          $.etch.stress  (get actor+
+                                              '$.etch.stress)
+                          impl           (get actor+
+                                              'impl)]
+                      (.log.level.set :info)
+                      (.log.out.set (.file.stream.out ~(str "bench/" dir "/" (.time.iso) ".cvx")))
+                      (.log.info* ~(str "Test path = " path.impl))
+                      ($.etch.stress/run impl
+                                         ~option+)
+                      (.log.info* "Deleting Etch file")
+                      (.fs.delete (.db.path)))])))
