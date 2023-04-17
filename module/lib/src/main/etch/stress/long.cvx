@@ -1,4 +1,4 @@
-{}
+{:deploy [$.etch.stress (lib etch stress)]}
 
 
 ;;;;;;;;;; Helpers
@@ -6,32 +6,36 @@
 
 (defn tuple
 
-  [n.long i.iter]
+  [n.long i.tuple]
 
-  (loop [v      [i.iter]]
+  (loop [v      [i.tuple]]
     (if (< (count v) 
            n.long)
       (recur (conj v
-                   i.iter))
+                   i.tuple))
       v)))
 
 
 
-(defn overhead.cycle
+(defn overhead.iter
 
   [n.long]
 
-  (let [n.iter 1e6
+  (.log.info* "Estimating overhead")
+  (let [n.tuple  1e6
         [nano
-         _]    (.time.do*
-                 (loop [i.iter 0]
-                   (when (< i.iter
-                            n.iter)
-                     (tuple n.long
-                            i.iter)
-                     (recur (inc i.iter)))))]
-    (/ nano
-       n.iter)))
+         _]      (.time.do*
+                   (loop [i.tuple 0]
+                     (when (< i.tuple
+                              n.tuple)
+                       (tuple n.long
+                              (+ 0
+                                 i.tuple))
+                       (recur (inc i.tuple)))))
+        overhead (/ nano
+                    n.tuple)]
+    (.log.info* (str "Overhead estimation = " overhead " nanos / tuple"))
+    overhead))
   
 
 ;;;;;;;;;; Stress test
@@ -41,20 +45,20 @@
 
   [result]
 
-  (let [n.iter (:n.iter result)
-        n.long (:n.long result)]
+  (let [n.long  (:n.long result)
+        n.tuple (:n.tuple result)]
     (.log.info* "Running iterations")
-    (loop [i.iter 0]
-      (when (< i.iter
-               n.iter)
+    (loop [i.tuple 0]
+      (when (< i.tuple
+               n.tuple)
         (let [tuple-      (tuple n.long
-                                 i.iter)
+                                 i.tuple)
               hash.target (hash (encoding tuple-))
               cell        (.db.read hash.target)]
           (if (= cell
                  tuple-)
-            (recur (inc i.iter))
-            [i.iter
+            (recur (inc i.tuple))
+            [i.tuple
              hash.target
              (hash (encoding cell))]))))))
 
@@ -64,32 +68,41 @@
 
   [option+]
 
-  (let [n.iter (or (:n.iter option+)
-                   1000000)
-        n.long (or (:n.long option+)
+  (let [n.long (or (:n.long option+)
                    8)]
     (when-not (<= 1
                   n.long
                   16)
       (fail :ARGUMENT
             "Number of Longs per tuple must be >= 1 and <= 16"))
-    (.log.info* (str "Number of iterations = " n.iter))
     (.log.info* (str "Number of Longs / tuple = " n.long))
-    (let [db.size  (.db.size)
-          _        (.log.info* "Estimating overhead")
-          overhead (overhead.cycle n.long)
-          _        (.log.info* (str "Overhead estimation = " overhead " nanos / tuple"))
-          _        (.log.info* "Measuring writes")
+    (let [db.size   (.db.size)
+          overhead  (overhead.iter n.long)
+          _         (.log.info* "Measuring writes")
           [n.nano
-           _]      (.time.do*
-                     (loop [i.iter 0]
-                       (when (< i.iter
-                                n.iter)
-                         (.db.write (tuple n.long
-                                           i.iter))
-                         (recur (inc i.iter)))))]
-      {:n.iter   n.iter
-       :n.long   n.long
-       :n.nano   n.nano
-       :overhead (* n.iter
-                    overhead)})))
+           n.tuple] (loop [i.iter 0
+                           n.nano 0]
+                      (if ($.etch.stress/write.size.total? option+)
+                        [n.nano
+                         (* 1000000
+                            i.iter)]
+                        (recur (inc i.iter)
+                               (+ n.nano
+                                  (let [i.tuple.iter (* i.iter
+                                                        1000000)]
+                                    (first
+                                      (.time.do*
+                                        (loop [i.tuple 0]
+                                          (when (< i.tuple
+                                                   1000000)
+                                            (.db.write (tuple n.long
+                                                              (+ i.tuple.iter
+                                                                 i.tuple)))
+                                            (recur (inc i.tuple)))))))))))]
+      (.log.info* (str "Number of tuples written = " n.tuple))
+      (merge option+
+             {:n.long   n.long
+              :n.nano   n.nano
+              :n.tuple  n.tuple
+              :overhead (* n.tuple
+                           overhead)}))))
