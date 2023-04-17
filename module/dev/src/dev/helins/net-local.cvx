@@ -1,0 +1,7 @@
+{:deploy [$.net.local (lib net local)]}
+
+
+;;;;;;;;;;
+
+
+($.net.local/main 3 30)
