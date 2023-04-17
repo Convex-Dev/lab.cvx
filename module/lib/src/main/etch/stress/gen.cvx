@@ -6,14 +6,21 @@
 
 (defn gen
 
-  [i.iter gen seed size]
+  [i.iter gen seed size n.byte.min]
 
   (.log.info* (str "Iteration " i.iter))
   (.log.info* "Generating data")
-  (.gen gen
-        {:seed (+ i.iter
-                  seed)
-         :size size}))
+  (loop [cell   []
+         seed-2 seed]
+    (if (< (.cell.size cell)
+           n.byte.min)
+      (recur (conj cell
+                   (.gen gen
+                         {:seed seed-2
+                          :size size}))
+             (inc seed-2))
+      [cell
+       seed-2])))
   
 
 ;;;;;;;;;; Stress testing
@@ -23,26 +30,31 @@
 
   [result]
 
-  (let [gen-   (:gen result)
-        hash+  (:hash+ result)
-        n.iter (:n.iter result)
-        seed   (:seed result)
-        size   (:size result)]
-    (loop [i.iter 0]
+  (let [gen-       (:gen result)
+        hash+      (:hash+ result)
+        n.byte.min (:n.byte.min result)
+        n.iter     (:n.iter result)
+        size       (:size result)]
+    (loop [i.iter 0
+           seed   (:seed result)]
       (when (< i.iter
                n.iter)
-        (let [hash.target (get hash+
-                               i.iter)
-              cell        (.db.read hash.target)]
-          (if (= cell
-                 (gen i.iter
-                      gen-
-                      seed
-                      size))
-            (recur (inc i.iter))
+        (let [hash.target  (get hash+
+                                i.iter)
+              cell.read    (.db.read hash.target)
+              [cell.target
+               seed-2]     (gen i.iter
+                                gen-
+                                seed
+                                size
+                                n.byte.min)]
+          (if (= cell.read
+                 cell.target)
+            (recur (inc i.iter)
+                   seed-2)
             [i.iter
              hash.target
-             (hash (encoding cell))]))))))
+             (hash (encoding cell.read))]))))))
 
 
 
@@ -52,41 +64,49 @@
 
   (when-not (.db.path)
     (.db.open (.fs.tmp)))
-  (let [n.iter  (or (:n.iter option+)
-                    5)
-        gen-    (or (:gen option+)
-                    (.gen.vector (.gen.any)
-                                 50000))
-        db.size (.db.size)
-        seed    (or (:seed option+)
-                    0)
-        size    (or (:size option+)
-                    30)]
+  (let [n.iter     (or (:n.iter option+)
+                       5)
+        gen-       (or (:gen option+)
+                       (.gen.vector (.gen.any)
+                                    50000))
+        db.size    (.db.size)
+        n.byte.min (or (:n.byte.min option+)
+                       10000000)
+        seed       (or (:seed option+)
+                       0)
+        size       (or (:size option+)
+                       30)]
     (.log.info* (str "Number of iterations = " n.iter))
+    (.log.info* (str "Minimum cell size = " (/ n.byte.min 1e6) " MB / write"))
     (.log.info* (str "Seed = " seed))
     (.log.info* (str "Size = " size))
     (loop [hash+   []
            i.iter  0
-           n.nano+ []]
+           n.nano+ []
+           seed-2  seed]
       (if (< i.iter
              n.iter)
-        (let [cell    (gen i.iter
-                           gen-
-                           seed
-                           size)
-             _        (.log.info* "Persisting generated data")
+        (let [[cell
+               seed-3] (gen i.iter
+                            gen-
+                            seed-2
+                            size
+                            n.byte.min)
+             _         (.log.info* "Persisting generated data")
              [t
-              cell-2] (.time.do* (.db.write cell))]
+              cell-2]  (.time.do* (.db.write cell))]
           (recur (conj hash+
                        (hash (encoding cell-2)))
                  (inc i.iter)
                  (conj n.nano+
-                       t)))
-        {:hash+  hash+
-         :gen    gen-
-         :n.iter n.iter
-         :n.nano (reduce +
-                         0
-                         n.nano+)
-         :seed   seed
-         :size   size}))))
+                       t)
+                 seed-3))
+        {:hash+      hash+
+         :gen        gen-
+         :n.byte.min n.byte.min
+         :n.iter     n.iter
+         :n.nano     (reduce +
+                             0
+                             n.nano+)
+         :seed       seed
+         :size       size}))))
