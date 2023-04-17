@@ -64,8 +64,6 @@
 
   [option+]
 
-  (when-not (.db.path)
-    (.db.open (.fs.tmp)))
   (let [n.iter (or (:n.iter option+)
                    1000000)
         n.long (or (:n.long option+)

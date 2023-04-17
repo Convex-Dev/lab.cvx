@@ -31,16 +31,25 @@
   [addr option+]
 
   (.log.info* "Starting write phase")
-  (let [db.size (.db.size)
-        result  (addr/write option+)
-        n.byte  (- (.db.size)
-                    db.size)
-        n.nano   (:n.nano result)
-        bps      (* (/ n.byte
-                       (- n.nano
-                          (or (:overhead result)
-                              0)))
-                    1e9)]
+  (if (.db.path)
+    (.log.info* "Reusing currently open Etch instance")
+    (do
+      (.log.info* "Opening new Etch instance at temporary location")
+      (.db.open (.fs.tmp))))
+  (let [etch.path       (.db.path)
+        _               (.log.info* (str "Etch path = " etch.path))
+        etch.size.start (.db.size)
+        result          (addr/write (assoc option+
+                                           :etch.path       etch.path
+                                           :etch.size.start etch.size.start))
+        n.byte          (- (.db.size)
+                            etch.size.start)
+        n.nano           (:n.nano result)
+        bps              (* (/ n.byte
+                               (- n.nano
+                                  (or (:overhead result)
+                                      0)))
+                            1e9)]
     (.log.info* (str "Etch growth = " (/ n.byte 1e6) " MB"))
     (.log.info* (str "Speed = " (/ bps 1e6) " MB / second"))
     (assoc result

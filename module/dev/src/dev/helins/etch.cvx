@@ -18,9 +18,9 @@
                     :n.long 16})
 
 ($.etch.stress/run $.etch.stress.gen
-                   {:n.byte.min 5000000
-                    :n.iter     100
-                    :gen        (.gen.blob-32)})
+                   {:n.byte.min 60000000
+                    :n.iter     5
+                    :gen        (.gen.any)})
                     
 
 #_($.etch.stress/run $.etch.stress.gen

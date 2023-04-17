@@ -62,14 +62,11 @@
 
   [option+]
 
-  (when-not (.db.path)
-    (.db.open (.fs.tmp)))
   (let [n.iter     (or (:n.iter option+)
                        5)
         gen-       (or (:gen option+)
                        (.gen.vector (.gen.any)
                                     50000))
-        db.size    (.db.size)
         n.byte.min (or (:n.byte.min option+)
                        10000000)
         seed       (or (:seed option+)
