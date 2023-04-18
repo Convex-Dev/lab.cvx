@@ -1,0 +1,96 @@
+{:deploy [$.net.local.diagnostic.impl (lib net local diagnostic impl)]}
+
+
+;;;;;;;;;;
+
+
+(defn consensus
+
+  [peer+]
+
+  (map (fn [status]
+         (.stream.txt.out "Peer ")
+         (.stream.outln (:i status))
+         (.stream.txt.out "Proposal point: ")
+         (.stream.outln (:point.proposal status))
+         (.stream.txt.out "Consensus point: ")
+         (.stream.outln (:point.consensus status))
+         (.stream.txt.out "N blocks: ")
+         (.stream.outln (:n.block status))
+         (.stream.txt.out "Consensus state hash: ")
+         (.stream.outln (:hash.state.consensus status))
+         (.stream.txt.outln ""))
+       ($.net.local.diagnostic.impl/consensus peer+))
+  nil)
+
+
+
+(defn consensus.matrix
+
+  [peer+]
+
+  (map .stream.outln
+       ($.net.local.diagnostic.impl/consensus.matrix peer+))
+  nil)
+
+
+
+(defn convergence
+
+  [peer+]
+
+  (map (fn [[point.consensus hash.state.consensus->i.peer+]]
+         (.stream.txt.outln (str "Consensus point = " point.consensus))
+         (map (fn [[hash.state.consensus i.peer+]]
+                (.stream.txt.outln (str "Consensus state = " hash.state.consensus " <- " i.peer+)))
+              hash.state.consensus->i.peer+)
+         (.stream.txt.outln ""))
+       ($.net.local.diagnostic.impl/convergence peer+))
+  nil)
+
+
+
+(defn convergence.fake
+
+  [peer+]
+
+  (let [pair+ ($.net.local.diagnostic.impl/convergence.fake peer+)]
+    (if (empty? pair+)
+      (.stream.txt.outln "All peers with the same consensus point are fully aligned")
+      (do
+        (.stream.txt.outln "Pairs of peers at the same consensus point but actually divergent:")
+        (.stream.txt.outln "")
+        (map (fn [pair]
+               (.stream.txt.outln (str (first pair) " & " (second pair))))
+             pair+))))
+  nil)
+
+
+
+(defn divergence
+
+  [peer+ i.peer-1 i.peer-2]
+
+  (when-let [[cp.joint
+              n.diff
+              n.aligned
+              last-block-1+
+              last-block-2+] ($.net.local.diagnostic.impl/divergence peer+
+                                                                     i.peer-1
+                                                                     i.peer-2)]
+         (.stream.txt.outln "")
+         (.stream.txt.outln (str "Joint consensus point: " cp.joint))
+         (.stream.txt.outln (str "N blocks divergent until joint consensus point: " (count last-block-1+)))
+         (.stream.txt.outln (str "N different blocks: " n.diff))
+         (.stream.txt.outln (str "N blocks aligned within divergent portion: " n.aligned))
+         (.stream.txt.outln "")
+         (.stream.txt.outln (str "Peer " i.peer-1 " last blocks:"))
+         (map (fn [h]
+                (.stream.txt.outln (str "    " h)))
+              last-block-1+)
+         (.stream.txt.outln "")
+         (.stream.txt.outln (str "Peer " i.peer-2 " last blocks:"))
+         (map (fn [h]
+                (.stream.txt.outln (str "    " h)))
+              last-block-2+))
+  nil)

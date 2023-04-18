@@ -1,0 +1,208 @@
+{}
+
+
+;;;;;;;;;;
+
+
+(defn block.hash+
+
+  [peer+]
+
+  (map (fn [peer]
+         (let [[ok?
+                _key
+                result] (.worker.exec peer
+                                      '(map (fn [block]
+                                              (hash (encoding block)))
+                                            (:blocks (.peer.order peer))))]
+           (when-not ok?
+             (fail :FAIL
+                   (str "Unable to retrieve block hashes for Peer " (:i peer))))
+           result))
+       peer+))
+
+
+
+(defn consensus
+
+  [peer+]
+
+  (let [n (count peer+)]
+    (loop [acc []
+           i   0]
+      (if (< i
+             n)
+        (recur (conj acc
+                     (let [[ok?
+                            _key
+                            status] (.worker.exec (nth peer+
+                                                       i)
+                                                  '(.peer.status peer))]
+                       (when-not ok?
+                         (fail :FAIL
+                               (str "Unable to retrieve status for Peer " i)))
+                       (assoc status
+                              :i
+                              i)))
+               (inc i))
+        acc))))
+
+
+
+(defn consensus.matrix
+
+  [peer+]
+
+  (let [hash+      (block.hash+ peer+)
+        n.peer     (count hash+)
+        consensus- (consensus peer+)]
+    (loop [acc    []
+           i.peer 0]
+      (if (< i.peer
+             n.peer)
+        (let [cp         (:point.consensus (nth consensus-
+                                                i.peer))
+              peer.hash+ (nth hash+
+                              i.peer)]
+          (recur (conj acc
+                       (loop [acc-2    []
+                              i.peer-2 0]
+                         (cond
+                           ;;
+                           (= i.peer-2
+                              i.peer)
+                           (recur (conj acc-2
+                                        1)
+                                  (inc i.peer-2))
+                           ;;
+                           (< i.peer-2
+                              n.peer)
+                           (let [peer-2.hash+ (nth hash+
+                                                   i.peer-2)
+                                 n.block      (min cp
+                                                   (:point.consensus (nth consensus-
+                                                                          i.peer-2)))]
+                             (recur (conj acc-2
+                                          (loop [i.block  0]
+                                            (if (< i.block
+                                                   n.block)
+                                              (if (= (nth peer.hash+
+                                                          i.block)
+                                                     (nth peer-2.hash+
+                                                          i.block))
+                                                (recur (inc i.block))
+                                                (/ i.block
+                                                   n.block))
+                                              1)))
+                                    (inc i.peer-2)))
+                           ;;
+                           acc-2)))
+                 (inc i.peer)))
+        acc))))
+
+
+
+(defn convergence
+
+  [peer+]
+
+  (let [n          (count peer+)
+        consensus- (consensus peer+)]
+    (loop [acc {}
+           i   0]
+      (if (< i
+             n)
+        (recur (let [status               (nth consensus-
+                                               i)
+                     point.consensus      (:point.consensus status)
+                     hash->i.peer+        (or (get acc
+                                                   point.consensus)
+                                              {})
+                     hash.state.consensus (:hash.state.consensus status)]
+                 (assoc acc
+                        point.consensus
+                        (assoc hash->i.peer+
+                               hash.state.consensus
+                               (conj (or (get hash->i.peer+
+                                              hash.state.consensus)
+                                         [])
+                                     i))))
+               (inc i))
+        acc))))
+
+
+
+(defn convergence.fake
+
+  [peer+]
+
+  (reduce (fn [acc [cp hash.state.consensus->i.peer+]]
+            (reduce (fn [acc-2 [hash.state.consensus i.peer+]]
+                      (loop [acc-3     acc-2
+                             i.peer-2+ i.peer+]
+                        (if (empty? i.peer-2+)
+                          acc-3
+                          (let [i.peer    (first i.peer-2+)
+                                i.peer-3+ (next i.peer-2+)]
+                            (recur (reduce (fn [acc-4 i.peer-2]
+                                             (if-let [d (divergence peer+
+                                                                    i.peer
+                                                                    i.peer-2)]
+                                               (conj acc-4
+                                                     [i.peer
+                                                      i.peer-2])
+                                               acc-4))
+                                           acc-3
+                                           i.peer-3+)
+                                   i.peer-3+)))))
+                    acc
+                    hash.state.consensus->i.peer+))
+          []
+          (convergence peer+)))
+
+
+
+(defn divergence
+
+  [peer+ i.peer-1 i.peer-2]
+
+  (let [consensus- (consensus peer+)
+        cp         (min (:point.consensus (nth consensus-
+                                               i.peer-1))
+                        (:point.consensus (nth consensus-
+                                               i.peer-2)))
+        block+     (block.hash+ peer+)
+        block-1+   (nth block+
+                        i.peer-1)
+        block-2+   (nth block+
+                        i.peer-2)]
+    (loop [i 0]
+      (if (< i
+             cp)
+        (let [h (nth block-1+
+                     i)]
+          (if (= h
+                 (nth block-2+
+                      i))
+            (recur (inc i))
+            (let [last-block-1+ (slice block-1+
+                                       i
+                                       cp)
+                  last-block-2+ (slice block-2+
+                                       i
+                                       cp)]
+              [cp
+               (count (difference (set last-block-1+)
+                                  (set last-block-2+)))
+               (reduce +
+                       0
+                       (map (fn [b-1 b-2]
+                              (if (= b-1
+                                     b-2)
+                                1
+                                0))
+                            last-block-1+
+                            last-block-2+))
+               last-block-1+
+               last-block-2+])))
+        nil))))

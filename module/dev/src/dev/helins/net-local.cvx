@@ -1,7 +1,8 @@
-{:deploy [$.net.local (lib net local)]}
+{:deploy [$.net.local (lib net local)
+          dia         (lib net local diagnostic)]}
 
 
 ;;;;;;;;;;
 
 
-($.net.local/main 3 30)
+;($.net.local/main 3 30)
