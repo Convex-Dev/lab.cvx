@@ -18,7 +18,7 @@
 (def kp-2
      (.kp.create (.gen (.gen.blob-32) {:seed 13})))
 
-($.peer/start.genesis (.kp.seed kp)
+#_($.peer/start.genesis (.kp.seed kp)
                       {:dir           "/tmp/peer"
                        :log.path      "/tmp/peer/log_0.cvx"
                        :peer+         [{:key (.kp.pubkey kp)}
@@ -30,14 +30,20 @@
                                              true)
                                         *state*)})
 
-($.peer/start.syncer (.kp.seed kp-2)
+#_($.peer/start.syncer (.kp.seed kp-2)
                      {:dir         "/tmp/peer"
                       :log.path    "/tmp/peer/log_1.cvx"
                       :port        18889
                       :remote.port 18888})
 
 
-#_($.peer/resume (.kp.seed kp)
-               {:dir "/tmp/peer"})
+($.peer/resume (.kp.seed kp)
+               {:dir         "/tmp/peer"
+                :log.path    "/tmp/peer/log_0.cvx"})
 
-#_(.client.repl {:address #12 :host "localhost" :port 18889 :key-pair kp :rtt? true})
+($.peer/resume (.kp.seed kp-2)
+               {:dir         "/tmp/peer"
+                :log.path    "/tmp/peer/log_1.cvx"})
+
+
+(.client.repl {:address #12 :host "localhost" :port 18889 :key-pair kp :rtt? true})

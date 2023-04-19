@@ -57,9 +57,24 @@
                               [pubkey :config])]
               (when-not config
                 (fail "Unable to retrieve peer configuration from Etch"))
-              (.log.info* (str "Resuming genesis peer on " (url config)))
-              (.peer.init kp
-                          config))))))
+              (let [type (:type config)
+                    url  (url config)]
+                (cond
+                  ;;
+                  (= type
+                     :genesis)
+                  (.log.info* (str "Resuming genesis peer on " url))
+                  ;;
+                  (= type
+                     :syncer)
+                  (.log.info* (str "Resuming syncer peer on " url))
+                  ;;
+                  (do
+                    (.log.fatal* (str "Unknown peer type = " type))
+                    (fail :SHELL.PEER
+                          "Unknown peer type")))
+                (.peer.init kp
+                            config)))))))
 
 
 
