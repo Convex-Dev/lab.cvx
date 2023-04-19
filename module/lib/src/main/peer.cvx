@@ -4,6 +4,15 @@
 ;;;;;;;;;; Helpers
 
 
+(defn dir
+
+  [option+]
+
+  (.fs.resolve (or (:dir option+)
+                   "./")))
+
+
+
 (defn url
 
   [option+]
@@ -18,7 +27,70 @@
 ;;;;;;;;;; Starting peers
 
 
-(defn genesis
+(defn resume
+
+
+  ([kp.seed]
+
+   (resume kp.seed
+           nil))
+
+  ([kp.seed option+]
+
+   (when-not (.fs.exists? (str (or (:dir option+) "./" "/store.etch")))
+     (fail :SHELL.PEER
+           "Etch file missing"))
+   (start kp.seed
+          option+
+          (fn [kp]
+            (let [pubkey (.kp.pubkey kp)
+                  config (get (.db.root.read)
+                              [pubkey :config])]
+              (when-not config
+                (fail "Unable to retrieve peer configuration from Etch"))
+              (.log.info* (str "Resuming genesis peer on " (url config)))
+              (.peer.init kp
+                          config))))))
+
+
+
+(defn start
+
+  [kp.seed option+ peer.init]
+
+  (let [dir-              (dir option+)
+        etch.path.target  (.fs.resolve (str dir- "/store.etch"))
+        etch.path.current (.db.path)]
+    (when (and etch.path.current
+               (not (= etch.path.current
+                       etch.path.target)))
+      (fail :SHELL.PEER
+            "Etch instance already open"))
+    (let [log.stream     (.file.stream.out (str dir- "/log.cvx")
+                                           {:append? true})
+          _              (do
+                           (.log.out.set log.stream)
+                           (.log.info* (str "Opening Etch instance at '" etch.path.target "'"))
+                           (.db.open etch.path.target))
+          kp             (do
+                           (.log.info* "Creating key pair from seed")
+                           (.kp.create kp.seed))
+          peer.option+   (:peer+ option+)
+          peer           (do
+                           (.log.info* "Initializing peer")
+                           (peer.init kp))]
+      (.log.info* "Starting peer")
+      (.peer.start peer)
+      {:dir        dir-
+       :key-pair   kp
+       :log.stream log.stream
+       :peer       peer})))
+
+
+
+(defn start.genesis
+
+   ;; TODO. Rand stakes, f-state
 
 
   ([kp.seed]
@@ -29,49 +101,45 @@
 
   ([kp.seed option+]
 
-   ;; TODO. Rand stakes, f-state, restart
-
-   (let [dir               (.fs.resolve (or (:dir option+)
-                                            "./"))
-         etch.path.target  (.fs.resolve (str dir "/store.etch"))
-         etch.path.current (.db.path)]
-     (when (and etch.path.current
-                (not (= etch.path.current
-                        etch.path.target)))
-       (fail :SHELL.PEER
-             "Etch instance already open"))
-     (let [log.stream (.file.stream.out (str dir "/log.cvx"))]
-       (.log.out.set log.stream)
-       (.log.info* (str "Opening Etch instance at '" etch.path.target "'"))
-       (.db.open etch.path.current)
-       (.log.info* "Creating key pair from seed")
-         (let [kp (.kp.create kp.seed)]
-           (.log.info* "Creating genesis state")
-           (let [peer.option+   (:peer+ option+)
-                 state          (.state.genesis
-                                  {:each-peer `(fn [peer]
-                                                 (.log.info* (str "Preparing state for peer controlled by " (:controller peer)))
-                                                 (let [pubkey (:key peer)]
-                                                   (set-peer-data pubkey
-                                                                  {:url (str (or (:host peer)
-                                                                                 "localhost")
-                                                                             ":"
-                                                                             (or (:port peer)
-                                                                                 .peer.default.port))})
-                                                   (set-peer-stake pubkey
-                                                                   (:stake peer))))
-                                   :peer+     peer.option+
-                                   :pubkey+   (map :key
-                                                   peer.option+)})
-                 _              (.log.info* "Initializing peer")
-                 peer.0.option+ (first peer.option+)
-                 peer           (.peer.init kp
-                                            (assoc peer.0.option+
-                                                   :state
-                                                   state))]
-             (.log.info* (str "Starting peer on " (url peer.0.option+)))
-             (.peer.start peer)
-             {:dir        dir
-              :key-pair   kp
-              :log.stream log.stream
-              :peer       peer}))))))
+   (start kp.seed
+          option+
+          (fn [kp]
+            (let [peer.option+   (:peer+ option+)
+                  state          (do
+                                   (.log.info* "Creating genesis state")
+                                   (.state.genesis
+                                       {:each-peer `(fn [peer]
+                                                      (.log.info* (str "Preparing state for peer controlled by " (:controller peer)))
+                                                      (let [pubkey (:key peer)]
+                                                        (set-peer-data pubkey
+                                                                       {:url (str (or (:host peer)
+                                                                                      "localhost")
+                                                                                  ":"
+                                                                                  (or (:port peer)
+                                                                                      .peer.default.port))})
+                                                        (set-peer-stake pubkey
+                                                                        (:stake peer))))
+                                        :peer+     peer.option+
+                                        :pubkey+   (map :key
+                                                        peer.option+)}))
+                  peer.0.option+ (first peer.option+)
+                  host           (or (:host peer.0.option+)
+                                     "localhost")
+                  port           (or (:port peer.0.option+)
+                                     .peer.default.port)
+                  pubkey         (.kp.pubkey kp)
+                  root-key       [pubkey :peer]]
+              (.log.info* "Storing peer information in Etch")
+              (.db.root.write {[pubkey :config] (assoc peer.0.option+
+                                                       :genesis? true               
+                                                       :host     host
+                                                       :root-key root-key
+                                                       :port     port)})
+              (.log.info* "Initializing genesis peer")
+              (.log.info* (str "Peer will run on " (url peer.0.option+)))
+              (.peer.init kp
+                          (assoc peer.0.option+
+                                 :host     host
+                                 :port     port
+                                 :root-key root-key
+                                 :state    state)))))))
