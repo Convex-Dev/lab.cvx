@@ -1,8 +1,22 @@
 {:deploy [$.net.local (lib net local)
+          $.peer      (lib peer)
           dia         (lib net local diagnostic)]}
+
+
+(.log.level.set :info)
 
 
 ;;;;;;;;;;
 
 
 ;($.net.local/main 3 30)
+
+
+(def kp
+     (.kp.create (.gen (.gen.blob-32) {:seed 12})))
+
+($.peer/genesis (.kp.seed kp)
+                {:dir   "/tmp/peer"
+                 :peer+ [{:key (.kp.pubkey kp)}]})
+
+(.client.repl {:address #12 :host "localhost" :key-pair kp :rtt? true})

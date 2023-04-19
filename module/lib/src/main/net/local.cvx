@@ -19,50 +19,7 @@
 
 
 
-(defn init.syncer
 
-  [command dir i kp+]
-
-  [i
-   (.a.do*
-     (let [port  (+ 18888
-                    i)
-           peer  (peer.process command
-                               dir
-                               i
-                               (nth kp+
-                                    i))
-           [ok?
-            _key
-            x]   (.worker.exec peer
-                               `(do
-                                  (.log.info* "Initializing peer")
-                                  (let [[ok?
-                                         x]  (.state.safe*
-                                               (def peer
-                                                    (.peer.init.sync kp
-                                                                     {
-                                                                        ;:delay.poll 1000000000
-
-                                                                      :port        ~port
-                                                                      :remote.port 18888})))]
-                                    (when-not ok?
-                                      (.log.fatal* ["Exception while initializing and syncing peer"
-                                                    x])
-                                      (.sys.exit 132))
-                                    (.log.info* "Starting peer and accepting client connections")
-                                    (let [[ok?
-                                           x]  (.state.safe*
-                                                 (.peer.start peer))]
-                                      (when-not ok?
-                                        (.log.fatal* ["Exception while starting peer"
-                                                      x])
-                                        (.sys.exit 133))
-                                        true))))]
-       (if ok?
-         peer
-         (fail :PEER
-               (str "Syncing peer " i " failed initialization")))))])
               
 
 
@@ -196,6 +153,54 @@
       peer
       (fail :PEER
             (str "Genesis peer failed initialization")))))
+
+
+
+(defn init.syncer
+
+  [command dir i kp+]
+
+  [i
+   (.a.do*
+     (let [port  (+ 18888
+                    i)
+           peer  (peer.process command
+                               dir
+                               i
+                               (nth kp+
+                                    i))
+           [ok?
+            _key
+            x]   (.worker.exec peer
+                               `(do
+                                  (.log.info* "Initializing peer")
+                                  (let [[ok?
+                                         x]  (.state.safe*
+                                               (def peer
+                                                    (.peer.init.sync kp
+                                                                     {
+                                                                        ;:delay.poll 1000000000
+
+                                                                      :port        ~port
+                                                                      :remote.port 18888})))]
+                                    (when-not ok?
+                                      (.log.fatal* ["Exception while initializing and syncing peer"
+                                                    x])
+                                      (.sys.exit 132))
+                                    (.log.info* "Starting peer and accepting client connections")
+                                    (let [[ok?
+                                           x]  (.state.safe*
+                                                 (.peer.start peer))]
+                                      (when-not ok?
+                                        (.log.fatal* ["Exception while starting peer"
+                                                      x])
+                                        (.sys.exit 133))
+                                        true))))]
+       (if ok?
+         peer
+         (fail :PEER
+               (str "Syncing peer " i " failed initialization")))))])
+
 
 
 
