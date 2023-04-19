@@ -15,9 +15,15 @@
 (def kp
      (.kp.create (.gen (.gen.blob-32) {:seed 12})))
 
-#_($.peer/genesis (.kp.seed kp)
-                {:dir   "/tmp/peer"
-                 :peer+ [{:key (.kp.pubkey kp)}]})
+#_($.peer/start.genesis (.kp.seed kp)
+                      {:dir           "/tmp/peer"
+                       :peer+         [{:key (.kp.pubkey kp)}]
+                       :prepare-state (fn [state]
+                                        (.state.switch state)
+                                        (.account.switch #12)
+                                        (def prepared?
+                                             true)
+                                        *state*)})
 
 ($.peer/resume (.kp.seed kp)
                {:dir "/tmp/peer"})

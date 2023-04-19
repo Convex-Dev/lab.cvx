@@ -90,7 +90,7 @@
 
 (defn start.genesis
 
-   ;; TODO. Rand stakes, f-state
+   ;; TODO. Helper for randomizing stakes?
 
 
   ([kp.seed]
@@ -122,6 +122,13 @@
                                         :peer+     peer.option+
                                         :pubkey+   (map :key
                                                         peer.option+)}))
+                  prepare-state  (:prepare-state option+)
+                  state-2        (if prepare-state
+                                   (do
+                                     (.log.info* "Preparing genesis state")
+                                     (second (.state.tmp*
+                                               (.state.core.vanilla (prepare-state state)))))
+                                   state)
                   peer.0.option+ (first peer.option+)
                   host           (or (:host peer.0.option+)
                                      "localhost")
@@ -142,4 +149,4 @@
                                  :host     host
                                  :port     port
                                  :root-key root-key
-                                 :state    state)))))))
+                                 :state    state-2)))))))
