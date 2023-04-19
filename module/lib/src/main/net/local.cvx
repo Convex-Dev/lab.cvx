@@ -1,4 +1,5 @@
-{:deploy [$.client.pool (lib client pool)]}
+{:deploy [$.client.pool (lib client pool)
+          $.peer        (lib peer)]}
 
 
 ;;;;;;;;;
@@ -431,3 +432,69 @@
           n.peer
           n.client
           n.client)))
+
+
+
+
+
+
+
+
+(defn start
+
+
+  ;; TODO. Allow preparing genesis state.
+  ;;       Simplify providing pubkey for genesis peer.
+  ;;       Allow resuming networks.
+
+
+  ([name n.peer]
+
+   (start name
+          n.peer
+          nil))
+
+
+  ([name n.peer option+]
+
+   (when (< n.peer
+            1)
+     (fail :ARGUMENT
+           "Must run at least 1 peer"))
+   (let [command            (or (:command option+)
+                                '[cvx])
+         controller.genesis 12
+         dir                ($.peer/dir option+)
+         dir.genesis        (str dir "/0")
+         log.level          (or (:log.level option+)
+                                :info)
+         pipe.genesis       (str name "_0")
+         peer.genesis       (.process.run
+                              (concat command
+                                      `[(do
+                                          (.log.level.set ~log.level)
+                                          (let [$.peer (get (.dep.deploy '[$.peer (lib peer)])
+                                                            '$.peer)]
+                                            (def peer
+                                                 (:peer ($.peer/start.genesis ~(.gen (.gen.blob-32)
+                                                                                     {:seed controller.genesis})
+                                                                              {:dir   ~dir.genesis
+                                                                               :peer+ [{:key ~(.kp.pubkey (.kp.create (.gen (.gen.blob-32)
+                                                                                                                            {:seed controller.genesis})))}]})))
+                                            (.log.info* (str "Starting worker named '" ~pipe.genesis "'"))
+                                            (.stream.outln :ready)
+                                            (.worker.start {:pipe             ~pipe.genesis
+                                                            :stream.out.limit ~(:stream.out.limit option+)})))])
+                              {:err (.file.stream.out (str dir.genesis "/err.txt"))})]
+     (.a.do*
+       (let [code (.a.take (:exit peer.genesis))]
+       (.prn :code code)
+         (if (zero? code)
+           (.log.info* "Peer 0 stopped normally")
+           (.log.error* (str "Peer 0 stopped with non-zero exit code: " code)))))
+     (when-not (= (first (.stream.line (:out peer.genesis)))
+                  :ready)
+       (fail :SHELL.PEER
+             "Problem while starting the genesis peer"))
+     (.log.info* "Peer genesis ready")
+     [peer.genesis])))
