@@ -48,8 +48,8 @@
 
 (def net
      ($.net.local/start "net"
-                        1
+                        10
                         {:dir "/tmp/net"}))
                  
 
-(.client.repl {:address #12 :host "localhost" :port 18888 :key-pair kp :rtt? true})
+(.client.repl {:address #12 :host "localhost" :port 18889 :key-pair kp :rtt? true})

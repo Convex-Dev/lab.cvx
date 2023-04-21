@@ -461,6 +461,8 @@
             1)
      (fail :ARGUMENT
            "Must run at least 1 peer"))
+   (.log.info* (str "Starting local network '" name "'"))
+   (.log.info* (str "N peers = " n.peer))
    (let [command            (or (:command option+)
                                 '[cvx])
          controller.genesis 12
@@ -469,26 +471,45 @@
          log.level          (or (:log.level option+)
                                 :info)
          pipe.genesis       (str name "_0")
+         kp+                (loop [acc    []
+                                   i.peer 0]
+                              (if (< i.peer
+                                     n.peer)
+                                (recur (conj acc
+                                             (.kp.create (.gen (.gen.blob-32)
+                                                               {:seed (+ controller.genesis
+                                                                         i.peer)})))
+                                       (inc i.peer))
+                                acc))
+         _                  (.log.info* "Starting genesis peer")
          peer.genesis       (.process.run
                               (concat command
-                                      `[(do
-                                          (.log.level.set ~log.level)
-                                          (let [$.peer (get (.dep.deploy '[$.peer (lib peer)])
-                                                            '$.peer)]
-                                            (def peer
-                                                 (:peer ($.peer/start.genesis ~(.gen (.gen.blob-32)
-                                                                                     {:seed controller.genesis})
-                                                                              {:dir   ~dir.genesis
-                                                                               :peer+ [{:key ~(.kp.pubkey (.kp.create (.gen (.gen.blob-32)
-                                                                                                                            {:seed controller.genesis})))}]})))
-                                            (.log.info* (str "Starting worker named '" ~pipe.genesis "'"))
-                                            (.stream.outln :ready)
-                                            (.worker.start {:pipe             ~pipe.genesis
-                                                            :stream.out.limit ~(:stream.out.limit option+)})))])
+                                      [(.cell.str
+                                         `(do
+                                            (.log.level.set ~log.level)
+                                            (let [$.peer (get (.dep.deploy '[$.peer (lib peer)])
+                                                              '$.peer)]
+                                              (def peer
+                                                   (:peer ($.peer/start.genesis ~(.kp.seed (first kp+))
+                                                                                {:dir   ~dir.genesis
+                                                                                 :peer+ ~(loop [acc    []
+                                                                                                i.peer 0]
+                                                                                           (if (< i.peer
+                                                                                                  n.peer)
+                                                                                             (recur (conj acc
+                                                                                                          {:key  (.kp.pubkey (get kp+
+                                                                                                                                  i.peer))
+                                                                                                           :port (+ 18888
+                                                                                                                    i.peer)})
+                                                                                                    (inc i.peer))
+                                                                                             acc))})))
+                                              (.log.info* ~(str "Starting worker named '" pipe.genesis "'"))
+                                              (.stream.outln :ready)
+                                              (.worker.start {:pipe             ~pipe.genesis
+                                                              :stream.out.limit ~(:stream.out.limit option+)}))))])
                               {:err (.file.stream.out (str dir.genesis "/err.txt"))})]
      (.a.do*
        (let [code (.a.take (:exit peer.genesis))]
-       (.prn :code code)
          (if (zero? code)
            (.log.info* "Peer 0 stopped normally")
            (.log.error* (str "Peer 0 stopped with non-zero exit code: " code)))))
@@ -497,4 +518,49 @@
        (fail :SHELL.PEER
              "Problem while starting the genesis peer"))
      (.log.info* "Peer genesis ready")
-     [peer.genesis])))
+     (let [n.peer.syncer (dec n.peer)]
+       (when (> n.peer.syncer
+                0)
+         (.log.info* (str "Starting syncer peers"))
+         (.log.info* (str "N syncers = " n.peer.syncer))
+         (loop [peer.syncer+ []]
+           (if (< (count peer.syncer+)
+                         n.peer.syncer)
+             (recur (conj peer.syncer+
+                          (let [i.peer      (inc (count peer.syncer+))
+                                dir.syncer  (str dir "/" i.peer)
+                                pipe.syncer (str name "_" i.peer)
+                                peer.syncer (.process.run
+                                              (concat command
+                                                      `[(do
+                                                          (.log.level.set ~log.level)
+                                                          (let [$.peer (get (.dep.deploy '[$.peer (lib peer)])
+                                                                            '$.peer)]
+                                                            (def peer
+                                                                 (:peer ($.peer/start.syncer ~(.kp.seed (get kp+
+                                                                                                             i.peer))
+                                                                                              {:dir  ~dir.syncer
+                                                                                               :port ~(+ 18888
+                                                                                                         i.peer)})))
+                                                            (.log.info* ~(str "Starting worker named '" pipe.syncer "'"))
+                                                            (.stream.outln :ready)
+                                                            (.worker.start {:pipe             ~pipe.syncer
+                                                                            :stream.out.limit ~(:stream.out.limit option+)})))])
+                                              {:err (.file.stream.out (str dir.syncer "/err.txt"))})]
+                            (.a.do*
+                              (let [code (.a.take (:exit peer.genesis))]
+                                (if (zero? code)
+                                  (.log.info* (str "Peer " i.peer " stopped normally"))
+                                  (.log.error* (str "Peer " i.peer " stopped with non-zero exit code: " code)))))
+                            peer.syncer)))
+             (reduce (fn [peer+ peer.syncer]
+                       (let [i.peer (count peer+)]
+                         (.log.info* (str "Awaiting peer " i.peer))
+                         (when-not (= (first (.stream.line (:out peer.syncer)))
+                                      :ready)
+                           (fail :SHELL.PEER
+                                 (str "Problem while awaiting peer " i.peer)))
+                         (conj peer+
+                               peer.syncer)))
+                     [peer.genesis]
+                     peer.syncer+))))))))

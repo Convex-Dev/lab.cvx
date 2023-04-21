@@ -91,17 +91,17 @@
       (fail :SHELL.PEER
             "Etch instance already open at a different location"))
       (let [log.stream   (.file.stream.out (or (:log.path option+)
-                                               (str dir- "/log.cvx"))
+                                              (str dir- "/log.cvx"))
                                            {:append? true})
-          _              (do
+            _            (do
                            (.log.out.set log.stream)
                            (.log.info* (str "Opening Etch instance at '" etch.path.target "'"))
                            (.db.open etch.path.target))
-          kp             (do
+            kp           (do
                            (.log.info* "Creating key pair from seed")
                            (.kp.create kp.seed))
-          peer.option+   (:peer+ option+)
-          peer           (do
+            peer.option+ (:peer+ option+)
+            peer         (do
                            (.log.info* "Initializing peer")
                            (peer.init kp))]
       (.log.info* "Starting peer")
