@@ -21,7 +21,7 @@
 #_($.peer/start.genesis (.kp.seed kp)
                       {:dir           "/tmp/peer"
                        :log.path      "/tmp/peer/log_0.cvx"
-                       :peer+         [{:key (.kp.pubkey kp)}
+                       :peer+         [nil
                                        {:key (.kp.pubkey kp-2)}]
                        :prepare-state (fn [state]
                                         (.state.switch state)
@@ -46,12 +46,12 @@
                 :log.path    "/tmp/peer/log_1.cvx"})
 
 
-(def net
+#_(def net
      ($.net.local/start "net"
                         10
                         {:dir "/tmp/net"}))
                  
 
 ;($.net.local/repl.peer net)
-;($.net.local/repl.client net #12)
-($.net.local/stop net)
+;($.net.local/stop net 0)
+#_($.net.local/repl.client net #12)

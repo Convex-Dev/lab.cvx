@@ -130,23 +130,28 @@
           option+
           (fn [kp]
             (let [peer.option+   (:peer+ option+)
+                  pubkey         (.kp.pubkey kp)
                   state          (do
                                    (.log.info* "Creating genesis state")
                                    (.state.genesis
-                                       {:each-peer `(fn [peer]
-                                                      (.log.info* (str "Preparing state for peer controlled by " (:controller peer)))
-                                                      (let [pubkey (:key peer)]
-                                                        (set-peer-data pubkey
-                                                                       {:url (str (or (:host peer)
-                                                                                      "localhost")
-                                                                                  ":"
-                                                                                  (or (:port peer)
-                                                                                      .peer.default.port))})
-                                                        (set-peer-stake pubkey
-                                                                        (:stake peer))))
-                                        :peer+     peer.option+
-                                        :pubkey+   (map :key
-                                                        peer.option+)}))
+                                     {:each-peer `(fn [peer]
+                                                    (.log.info* (str "Preparing state for peer controlled by " (:controller peer)))
+                                                    (let [pubkey (:key peer)]
+                                                      (set-peer-data pubkey
+                                                                     {:url (str (or (:host peer)
+                                                                                    "localhost")
+                                                                                ":"
+                                                                                (or (:port peer)
+                                                                                    .peer.default.port))})
+                                                      (set-peer-stake pubkey
+                                                                      (:stake peer))))
+                                      :peer+     peer.option+
+                                      :pubkey+   (if (empty? peer.option+)
+                                                   [pubkey]
+                                                   (assoc (map :key
+                                                               peer.option+)
+                                                          0
+                                                          pubkey))}))
                   prepare-state  (:prepare-state option+)
                   state-2        (if prepare-state
                                    (do
