@@ -5,25 +5,6 @@
 ;;;;;;;;;
 
 
-
-(defn stop
-
-  [peer+]
-
-  (let [n (count peer+)]
-    (loop [i 0]
-      (when (< i
-               n)
-        (.log.info* (str "Killing Peer "
-                         i))
-        (.process.kill (nth peer+
-                            i))
-        (recur (inc i)))))
-  nil)
-
-
-
-
 (defn code.account+
 
   [n seed]
@@ -128,24 +109,9 @@
 
 
 
-(defn main
-
-  [n.peer n.client]
-
-  (let [peer+ (go n.peer)]
-    (trx.account+ peer+
-                  n.client)
-    (load peer+
-          n.peer
-          n.client
-          n.client)))
 
 
-
-
-
-
-
+;;;;;;;;;;
 
 
 (defn kp.seed+
@@ -403,3 +369,31 @@
                                  (.gen (.gen.long.uniform 0
                                                           (dec (count (:peer+ net))))
                                        {:seed (.time.unix)})))})))
+
+
+
+(defn kill
+
+
+  ([net]
+
+   (kill net
+         nil))
+
+
+  ([net i.peer]
+
+   (let [peer+ (:peer+ net)
+         kill- (fn [i.peer]
+                 (.log.info* (str "Killing peer " i.peer))
+                 (.process.kill (get peer+
+                                     i.peer)))]
+     (if (nil? i.peer)
+       (let [n.peer (count peer+)]
+         (loop [i.peer-2 0]
+           (when (< i.peer-2
+                    n.peer)
+             (kill- i.peer-2)
+             (recur (inc i.peer-2)))))
+       (kill- i.peer)))
+   nil))
