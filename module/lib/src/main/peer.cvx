@@ -54,35 +54,30 @@
    (start kp.seed
           option+
           (fn [kp]
-            (let [pubkey (.kp.pubkey kp)
-                  config (get (.db.root.read)
-                              [pubkey :config])]
-              (when-not config
-                (fail "Unable to retrieve peer configuration from Etch"))
-              (let [config-2 (merge config
-                                    option+)
-                    type     (:type config)
-                    url      (url config)]
-                (cond
-                  ;;
-                  (= type
-                     :genesis)
-                  (do
-                    (.log.info* (str "Resuming genesis peer on " url))
-                    (.peer.init kp
-                                config-2))
-                  ;;
-                  (= type
-                     :syncer)
-                  (do
-                    (.log.info* (str "Resuming syncer peer on " url))
-                    (.peer.init.sync kp
-                                     config-2))
-                  ;;
-                  (do
-                    (.log.fatal* (str "Unknown peer type = " type))
-                    (fail :SHELL.PEER
-                          "Unknown peer type")))))))))
+            (let [pubkey      (.kp.pubkey kp)
+                  config.path (.fs.resolve (or (:config.path option+)
+                                               (str (dir option+) "/config.cvx")))
+                  config      (do
+                                (.log.info* (str "Reading peer configuration from '" config.path "'"))
+                                (first (.file.read config.path)))]
+              (let [config-2    (merge config
+                                       option+)
+                    remote.host (:remote.host config-2)
+                    remote.port (:remote.port config-2)]
+                (.log.info* (str "Resuming peer on " (url config-2)))
+                [(if (and remote.host
+                          remote.port)
+                   (do
+                     (.log.info* (str "Syncing against "
+                                      (url remote.host
+                                           remote.port)))
+                     (.peer.init.sync kp
+                                      config-2))
+                   (do
+                     (.log.info* "No sync")
+                     (.peer.init kp
+                                 config-2)))
+                                 nil]))))))
 
 
 
@@ -109,9 +104,16 @@
                            (.log.info* "Creating key pair from seed")
                            (.kp.create kp.seed))
             peer.option+ (:peer+ option+)
-            peer         (do
+            [peer
+             config]     (do
                            (.log.info* "Initializing peer")
                            (peer.init kp))]
+      (when config
+        (let [path.config  (.fs.resolve (or (:config.path option+)
+                                            (str dir- "/config.cvx")))]
+          (.log.info* (str "Storing peer configuration at '" path.config "'"))
+          (.file.write path.config
+                       config)))
       (.log.info* "Starting peer")
       (.peer.start peer)
       {:dir        dir-
@@ -172,22 +174,16 @@
                                      "localhost")
                   port           (or (:port peer.0.option+)
                                      .peer.default.port)
-                  pubkey         (.kp.pubkey kp)
-                  root-key       [pubkey :peer]
                   config         {:host     host
                                   :port     port
-                                  :root-key root-key
-                                  :type     :genesis}]
-              (.log.info* "Storing peer information in Etch")
-              (.db.root.write (assoc (.db.root.read)
-                                     [pubkey :config]
-                                     config))
+                                  :root-key (:root-key option+)}]
               (.log.info* "Initializing genesis peer")
               (.log.info* (str "Peer will run on " (url peer.0.option+)))
-              (.peer.init kp
-                          (assoc config
-                                 :state
-                                 state-2)))))))
+              [(.peer.init kp
+                           (assoc config
+                                  :state
+                                  state-2))
+               config])))))
 
 
 
@@ -213,15 +209,10 @@
                               :port        port
                               :remote.host remote.host
                               :remote.port remote.port
-                              :root-key    root-key}]
-           (.log.info* "Storing peer information in Etch")
-           (.db.root.write (assoc (.db.root.read)
-                                  [pubkey :config]
-                                  (assoc config
-                                         :type
-                                         :syncer)))
+                              :root-key    (:root-key option+)}]
            (.log.info* "Initializing syncer peer")
            (.log.info* (str "Peer will run on " (url option+)))
            (.log.info* (str "Peer will sync with " remote.host ":" remote.port))
-           (.peer.init.sync kp
-                            config)))))
+           [(.peer.init.sync kp
+                             config)
+            config]))))

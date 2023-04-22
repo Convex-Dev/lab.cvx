@@ -19,10 +19,12 @@
      (.kp.create (.gen (.gen.blob-32) {:seed 13})))
 
 #_($.peer/start.genesis (.kp.seed kp)
-                      {:dir           "/tmp/peer"
+                      {:config.path   "/tmp/peer/config_0.cvx"
+                       :dir           "/tmp/peer"
                        :log.path      "/tmp/peer/log_0.cvx"
                        :peer+         [nil
-                                       {:key (.kp.pubkey kp-2)}]
+                                       {:key  (.kp.pubkey kp-2)
+                                        :port 18889}]
                        :prepare-state (fn [state]
                                         (.state.switch state)
                                         (.account.switch #12)
@@ -31,18 +33,21 @@
                                         *state*)})
 
 #_($.peer/start.syncer (.kp.seed kp-2)
-                     {:dir         "/tmp/peer"
+                     {:config.path "/tmp/peer/config_1.cvx"
+                      :dir         "/tmp/peer"
                       :log.path    "/tmp/peer/log_1.cvx"
                       :port        18889
                       :remote.port 18888})
 
 
 ($.peer/resume (.kp.seed kp)
-               {:dir         "/tmp/peer"
+               {:config.path "/tmp/peer/config_0.cvx"
+                :dir         "/tmp/peer"
                 :log.path    "/tmp/peer/log_0.cvx"})
 
 ($.peer/resume (.kp.seed kp-2)
-               {:dir         "/tmp/peer"
+               {:config.path "/tmp/peer/config_1.cvx"
+                :dir         "/tmp/peer"
                 :log.path    "/tmp/peer/log_1.cvx"})
 
 (.client.repl {:address #12 :host "localhost" :key-pair kp :port 18889 :rtt? true})
