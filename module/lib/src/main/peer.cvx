@@ -46,7 +46,9 @@
 
   ([kp.seed option+]
 
-   (when-not (.fs.exists? (str (or (:dir option+) "./" "/store.etch")))
+   (when-not (.fs.exists? (str (or (:dir option+)
+                                   "./")
+                               "/store.etch"))
      (fail :SHELL.PEER
            "Etch file missing"))
    (start kp.seed
@@ -57,24 +59,30 @@
                               [pubkey :config])]
               (when-not config
                 (fail "Unable to retrieve peer configuration from Etch"))
-              (let [type (:type config)
-                    url  (url config)]
+              (let [config-2 (merge config
+                                    option+)
+                    type     (:type config)
+                    url      (url config)]
                 (cond
                   ;;
                   (= type
                      :genesis)
-                  (.log.info* (str "Resuming genesis peer on " url))
+                  (do
+                    (.log.info* (str "Resuming genesis peer on " url))
+                    (.peer.init kp
+                                config-2))
                   ;;
                   (= type
                      :syncer)
-                  (.log.info* (str "Resuming syncer peer on " url))
+                  (do
+                    (.log.info* (str "Resuming syncer peer on " url))
+                    (.peer.init.sync kp
+                                     config-2))
                   ;;
                   (do
                     (.log.fatal* (str "Unknown peer type = " type))
                     (fail :SHELL.PEER
-                          "Unknown peer type")))
-                (.peer.init kp
-                            config)))))))
+                          "Unknown peer type")))))))))
 
 
 

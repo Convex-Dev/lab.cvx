@@ -37,13 +37,15 @@
                       :remote.port 18888})
 
 
-#_($.peer/resume (.kp.seed kp)
+($.peer/resume (.kp.seed kp)
                {:dir         "/tmp/peer"
                 :log.path    "/tmp/peer/log_0.cvx"})
 
-#_($.peer/resume (.kp.seed kp-2)
+($.peer/resume (.kp.seed kp-2)
                {:dir         "/tmp/peer"
                 :log.path    "/tmp/peer/log_1.cvx"})
+
+(.client.repl {:address #12 :host "localhost" :key-pair kp :port 18889 :rtt? true})
 
 
 #_(def net
