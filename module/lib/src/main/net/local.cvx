@@ -289,20 +289,21 @@
         port.genesis (:port.genesis config)]
     (.log.level.set (:log.level config))
     (def peer
-         (:peer ($.peer/start.genesis (first kp.seed+)
-                                      {:dir   (:dir config)
-                                       :peer+ (loop [acc    []
-                                                     i.peer 0]
-                                                (if (< i.peer
-                                                       n.peer)
-                                                  (recur (conj acc
-                                                               {:key  (.kp.pubkey (.kp.create (get kp.seed+
-                                                                                                   i.peer)))
-                                                                :port (+ port.genesis
-                                                                         i.peer)})
-                                                         (inc i.peer))
-                                                  acc))
-                                        :port port.genesis})))
+         (:peer ($.peer/start (first kp.seed+)
+                              (.state.genesis {:peer+
+                                               (loop [acc    []
+                                                      i.peer 0]
+                                                 (if (< i.peer
+                                                        n.peer)
+                                                   (recur (conj acc
+                                                                {:key  (.kp.pubkey (.kp.create (get kp.seed+
+                                                                                                    i.peer)))
+                                                                 :port (+ port.genesis
+                                                                          i.peer)})
+                                                          (inc i.peer))
+                                                   acc))})
+                              {:dir  (:dir config)
+                               :port port.genesis})))
     (start-worker (:name config)
                   0
                   (:stream.out.limit config))))
@@ -317,11 +318,11 @@
   (let [i.peer       (:i.peer config)
         port.genesis (:port.genesis config)]
     (def peer
-         (:peer ($.peer/start.syncer (get (:kp.seed+ config)
-                                          i.peer)
-                                     {:dir  (:dir config)
-                                      :port (+ port.genesis
-                                               i.peer)})))
+         (:peer ($.peer/start.sync (get (:kp.seed+ config)
+                                        i.peer)
+                                   {:dir  (:dir config)
+                                    :port (+ port.genesis
+                                             i.peer)})))
     (start-worker (:name config)
                   i.peer
                   (:stream.out.limit config))))

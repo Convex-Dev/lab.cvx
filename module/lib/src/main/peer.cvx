@@ -124,8 +124,6 @@
 
 (defn start
 
-   ;; TODO. Helper for randomizing stakes?
-
 
   ([kp.seed state]
 
@@ -139,14 +137,13 @@
    (-start kp.seed
            option+
            (fn [kp]
-             (let [host   (or (:port option+)
+             (let [host   (or (:host option+)
                               "localhost")
                    port   (or (:port option+)
                               .peer.default.port)
                    config {:host     host
                            :port     port
                            :root-key (:root-key option+)}]
-               (.log.info* "Initializing genesis peer")
                (.log.info* (str "Peer will run on " (url option+)))
                [(.peer.init kp
                             (assoc config
@@ -183,7 +180,6 @@
                                 :remote.host remote.host
                                 :remote.port remote.port
                                 :root-key    (:root-key option+)}]
-             (.log.info* "Initializing syncer peer")
              (.log.info* (str "Peer will run on " (url option+)))
              (.log.info* (str "Peer will sync with " remote.host ":" remote.port))
              [(.peer.init.sync kp
