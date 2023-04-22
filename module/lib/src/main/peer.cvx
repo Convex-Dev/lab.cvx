@@ -92,33 +92,33 @@
                                "/store.etch"))
      (fail :SHELL.PEER
            "Etch file missing"))
-   (start kp.seed
-          option+
-          (fn [kp]
-            (let [pubkey      (.kp.pubkey kp)
-                  config.path (.fs.resolve (or (:config.path option+)
-                                               (str (dir option+) "/config.cvx")))
-                  config      (do
-                                (.log.info* (str "Reading peer configuration from '" config.path "'"))
-                                (first (.file.read config.path)))]
-              (let [config-2    (merge config
-                                       option+)
-                    remote.host (:remote.host config-2)
-                    remote.port (:remote.port config-2)]
-                (.log.info* (str "Resuming peer on " (url config-2)))
-                [(if (and remote.host
-                          remote.port)
-                   (do
-                     (.log.info* (str "Syncing against "
-                                      (url remote.host
-                                           remote.port)))
-                     (.peer.init.sync kp
-                                      config-2))
-                   (do
-                     (.log.info* "No sync")
-                     (.peer.init kp
-                                 config-2)))
-                                 nil]))))))
+   (-start kp.seed
+           option+
+           (fn [kp]
+             (let [pubkey      (.kp.pubkey kp)
+                   config.path (.fs.resolve (or (:config.path option+)
+                                                (str (dir option+) "/config.cvx")))
+                   config      (do
+                                 (.log.info* (str "Reading peer configuration from '" config.path "'"))
+                                 (first (.file.read config.path)))]
+               (let [config-2    (merge config
+                                        option+)
+                     remote.host (:remote.host config-2)
+                     remote.port (:remote.port config-2)]
+                 (.log.info* (str "Resuming peer on " (url config-2)))
+                 [(if (and remote.host
+                           remote.port)
+                    (do
+                      (.log.info* (str "Syncing against "
+                                       (url remote.host
+                                            remote.port)))
+                      (.peer.init.sync kp
+                                       config-2))
+                    (do
+                      (.log.info* "No sync")
+                      (.peer.init kp
+                                  config-2)))
+                                  nil]))))))
 
 
 
