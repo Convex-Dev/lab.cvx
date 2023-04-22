@@ -127,61 +127,31 @@
    ;; TODO. Helper for randomizing stakes?
 
 
-  ([kp.seed]
+  ([kp.seed state]
 
    (start kp.seed
+          state
           nil))
 
 
-  ([kp.seed option+]
+  ([kp.seed state option+]
 
    (-start kp.seed
            option+
            (fn [kp]
-             (let [peer.option+   (:peer+ option+)
-                   pubkey         (.kp.pubkey kp)
-                   state          (do
-                                    (.log.info* "Creating genesis state")
-                                    (.state.genesis
-                                      {:each-peer `(fn [peer]
-                                                     (.log.info* (str "Preparing state for peer controlled by " (:controller peer)))
-                                                     (let [pubkey (:key peer)]
-                                                       (set-peer-data pubkey
-                                                                      {:url (str (or (:host peer)
-                                                                                     "localhost")
-                                                                                 ":"
-                                                                                 (or (:port peer)
-                                                                                     .peer.default.port))})
-                                                       (set-peer-stake pubkey
-                                                                       (:stake peer))))
-                                       :peer+     peer.option+
-                                       :pubkey+   (if (empty? peer.option+)
-                                                    [pubkey]
-                                                    (assoc (map :key
-                                                                peer.option+)
-                                                           0
-                                                           pubkey))}))
-                   prepare-state  (:prepare-state option+)
-                   state-2        (if prepare-state
-                                    (do
-                                      (.log.info* "Preparing genesis state")
-                                      (second (.state.tmp*
-                                                (.state.core.vanilla (prepare-state state)))))
-                                    state)
-                   peer.0.option+ (first peer.option+)
-                   host           (or (:host peer.0.option+)
-                                      "localhost")
-                   port           (or (:port peer.0.option+)
-                                      .peer.default.port)
-                   config         {:host     host
-                                   :port     port
-                                   :root-key (:root-key option+)}]
+             (let [host   (or (:port option+)
+                              "localhost")
+                   port   (or (:port option+)
+                              .peer.default.port)
+                   config {:host     host
+                           :port     port
+                           :root-key (:root-key option+)}]
                (.log.info* "Initializing genesis peer")
-               (.log.info* (str "Peer will run on " (url peer.0.option+)))
+               (.log.info* (str "Peer will run on " (url option+)))
                [(.peer.init kp
                             (assoc config
                                    :state
-                                   state-2))
+                                   state))
                 config])))))
 
 
@@ -208,8 +178,6 @@
                                    "localhost")
                    remote.port (or (:remote.port option+)
                                    .peer.default.port)
-                   pubkey      (.kp.pubkey kp)
-                   root-key    [pubkey :peer]
                    config      {:host        host
                                 :port        port
                                 :remote.host remote.host
