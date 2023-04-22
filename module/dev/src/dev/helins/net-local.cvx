@@ -54,3 +54,4 @@
 
 ;($.net.local/repl.peer net)
 ;($.net.local/repl.client net #12)
+($.net.local/stop net)

@@ -397,3 +397,46 @@
              (recur (inc i.peer-2)))))
        (kill- i.peer)))
    nil))
+
+
+
+(defn stop
+
+
+  ([net]
+
+   (stop net
+         nil))
+
+
+  ([net i.peer]
+
+   (let [peer+ (:peer+ net)
+         stop- (fn [i.peer]
+                 (.log.info* (str "Initiate clean shutdown of peer " i.peer))
+                 (let [[in
+                        out] (.worker.pipe+ (str (:name net) "_" i.peer))]
+                   (.try.resrc* [in-2  (.file.stream.out in)
+                                       (.stream.close in-2)
+                                 out-2 (.file.stream.in out)
+                                       (.stream.close out-2)]
+                     (let [[ok?
+                            _key
+                            _result] (.worker.exec {:in  in-2
+                                                    :out out-2}
+                                                   '(do
+                                                      (.log.info* "Attempting clean shutdown")
+                                                      (.peer.stop peer)
+                                                      (.log.info* "Peer stopped")
+                                                      :worker.stop))]
+                       (when-not ok?
+                         (.log.error* (str "Error while trying to cleanly shutdown peer " i.peer)))))))]
+     (if (nil? i.peer)
+       (let [n.peer (count peer+)]
+         (loop [i.peer-2 0]
+           (when (< i.peer-2
+                    n.peer)
+             (stop- i.peer-2)
+             (recur (inc i.peer-2)))))
+       (stop- i.peer)))
+   nil))
