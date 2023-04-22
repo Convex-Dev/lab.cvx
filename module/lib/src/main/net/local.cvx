@@ -24,46 +24,6 @@
 
 
 
-
-
-(defn client.repl
-
-
-  ([peer+ i]
-
-   (client.repl peer+
-                i
-                nil))
-
-
-  ([peer+ i option+]
-
-   (.client.repl (merge {:rtt? true}
-                        option+
-                        {:address  (address (+ (long .account.genesis)
-                                               1
-                                               i))
-                         :host     "localhost"
-                         :key-pair (:kp (nth peer+
-                                             i))
-                         :port     (+ 18888
-                                      i)}))))
-
-
-(defn go
-
-  [n]
-
-  (.log.level.set :info)
-  (def ps
-       (start ;'[java "-Xms10G" "-Xmx20G" "-jar" "/Users/adam/Code/convex/clj/tool/private/target/shell.uber.jar"]
-              '[cvx]
-              {:dir "/tmp/net"
-               :n   n})))
-
-
-
-
 (defn code.account+
 
   [n seed]
@@ -309,13 +269,14 @@
          dir                ($.peer/dir option+)
          log.level          (or (:log.level option+)
                                 :info)
+         port.genesis       (or (:port.genesis option+)
+                                .peer.default.port)
          config             {:dir              dir
                              :kp.seed+         (kp.seed+ n.peer)
                              :name             name
                              :log.level        (or (:log.level option+)
                                                    :info)
-                             :port.genesis     (or (:port.genesis option+)
-                                                   18888)
+                             :port.genesis     port.genesis
                              :stream.out.limit (:stream.out.limit option+)}
          _                  (.log.info* "Starting peer 0 (genesis peer)")
          peer.genesis       (process command
@@ -340,14 +301,15 @@
                                             :i.peer
                                             i.peer)
                                      'start.syncer))))
-             {:name  name
-              :peer+ (reduce (fn [peer+ peer.syncer]
-                               (process.ensure-ready peer.syncer
-                                                     (count peer+))
-                               (conj peer+
-                                      peer.syncer))
-                             [peer.genesis]
-                             peer.syncer+)})))))))
+             {:name         name
+              :peer+        (reduce (fn [peer+ peer.syncer]
+                                      (process.ensure-ready peer.syncer
+                                                            (count peer+))
+                                      (conj peer+
+                                             peer.syncer))
+                                    [peer.genesis]
+                                    peer.syncer+)
+              :port.genesis port.genesis})))))))
 
 
 
@@ -398,6 +360,30 @@
                   i.peer
                   (:stream.out.limit config))))
 
+
+
+(defn repl.client
+
+
+  ([net addr]
+
+    (repl.client net
+                 addr
+                 nil))
+
+
+  ([net addr option+]
+
+   (.client.repl (merge {:key-pair (.kp.create (.gen (.gen.blob-32)
+                                               {:seed (long addr)}))
+                         :rtt?     true}
+                        option+
+                        {:address addr
+                         :host     "localhost"
+                         :port     (+ (:port.genesis net)
+                                      (.gen (.gen.long.uniform 0
+                                                               (dec (count (:peer+ net))))
+                                            {:seed (.time.unix)}))}))))
 
 
 (defn repl.peer
