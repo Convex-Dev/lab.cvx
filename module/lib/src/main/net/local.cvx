@@ -114,6 +114,17 @@
 ;;;;;;;;;;
 
 
+(defn kp.seed
+
+  [i.peer]
+
+  (let [controller.genesis 12]
+    (.gen (.gen.blob-32)
+          {:seed (+ controller.genesis
+                    i.peer)})))
+
+
+
 (defn kp.seed+
 
   [n.peer]
@@ -124,9 +135,7 @@
       (if (< i.peer
              n.peer)
         (recur (conj acc
-                     (.gen (.gen.blob-32)
-                           {:seed (+ controller.genesis
-                                     i.peer)}))
+                     (kp.seed i.peer))
                (inc i.peer))
         acc))))
 
@@ -182,7 +191,7 @@
 
 
 
-(defn process
+(defn process.start
 
   [command config sym.fn]
 
@@ -200,8 +209,39 @@
                                        dir.peer)))))
                    {:err (.file.stream.out (str dir.peer "/err.txt"))})]
     (monitor-exit peer
-                  (:i.peer config))
+                  i.peer)
     peer))
+
+
+
+(defn process.resume
+
+  [command config]
+
+  (let [i.peer   (:i.peer config)
+        dir.peer (str (:dir config) "/" i.peer)
+        peer     (.process.run
+                   (conj command
+                         (.cell.str
+                           `(let [dep+        (.dep.deploy '[$.net.local (lib net local)
+                                                             $.peer      (lib peer)])
+                                  $.net.local (get dep+
+                                                   '$.net.local)
+                                  $.peer      (get dep+
+                                                   '$.peer)]
+                                                   (.stream.errln [:log ~(:log.level config)])
+                                                   (.stream.flush (.stream.stderr))
+                              (.log.level.set ~(:log.level config))
+                              ($.peer/resume ~(kp.seed i.peer)
+                                             {:dir ~dir.peer})
+                              ($.net.local/start-worker ~(:name config)
+                                                        ~i.peer
+                                                        ~(:stream.out.limit config)))))
+                   {:err (.file.stream.out (str dir.peer "/err.txt"))})]
+    (monitor-exit peer
+                  i.peer)
+    peer))
+
 
             
 
@@ -245,11 +285,11 @@
                              :port.genesis     port.genesis
                              :stream.out.limit (:stream.out.limit option+)}
          _                  (.log.info* "Starting peer 0 (genesis peer)")
-         peer.genesis       (process command
-                                     (assoc config
-                                            :i.peer
-                                            0)
-                                     'start.genesis)]
+         peer.genesis       (process.start command
+                                           (assoc config
+                                                  :i.peer
+                                                  0)
+                                           'start.genesis)]
      (process.ensure-ready peer.genesis
                            0)
      (let [n.peer.syncer (dec n.peer)]
@@ -262,17 +302,17 @@
                          n.peer.syncer)
              (recur (conj peer.syncer+
                           (let [i.peer (inc (count peer.syncer+))]
-                            (process command
-                                     (assoc config
-                                            :i.peer
-                                            i.peer)
-                                     'start.syncer))))
+                            (process.start command
+                                           (assoc config
+                                                  :i.peer
+                                                  i.peer)
+                                           'start.syncer))))
              {:name         name
               :peer+        (reduce (fn [peer+ peer.syncer]
                                       (process.ensure-ready peer.syncer
                                                             (count peer+))
                                       (conj peer+
-                                             peer.syncer))
+                                            peer.syncer))
                                     [peer.genesis]
                                     peer.syncer+)
               :port.genesis port.genesis})))))))
@@ -441,3 +481,51 @@
              (recur (inc i.peer-2)))))
        (stop- i.peer)))
    nil))
+
+
+
+
+(defn resume
+
+  
+  ([name]
+
+   (resume name
+           nil))
+
+
+  ([name option+]
+
+   (.log.info* (str "Resuming local network '" name "'"))
+   (let [command      (vec (or (:command option+)
+                                '[cvx]))
+         dir          ($.peer/dir option+)
+         config       {:dir              dir
+                       :log.level        (or (:log.level option+)
+                                             :info)
+                       :name             name
+                       :stream.out.limit (:stream.out.limit option+)}
+         _            (.log.info* "Resuming peer 0 (genesis peer)")
+         peer.genesis (process.resume command
+                                      (assoc config
+                                             :i.peer
+                                             0))]
+     (process.ensure-ready peer.genesis
+                           0)
+     (loop [peer.syncer+ []]
+       (let [i.peer (inc (count peer.syncer+))]
+         (if (.fs.exists? (str dir "/" i.peer))
+           (recur (conj peer.syncer+
+                        (process.resume command
+                                        (assoc config
+                                               :i.peer
+                                               i.peer))))
+           {:name         name
+            :peer+        (reduce (fn [peer+ peer.syncer]
+                                    (process.ensure-ready peer.syncer
+                                                          (count peer+))
+                                    (conj peer+
+                                          peer.syncer))
+                                  [peer.genesis]
+                                  peer.syncer+)
+            :port.genesis (:port (first (.file.read (str dir "/0/config.cvx"))))}))))))

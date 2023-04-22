@@ -28,7 +28,6 @@
             kp           (do
                            (.log.info* "Creating key pair from seed")
                            (.kp.create kp.seed))
-            peer.option+ (:peer+ option+)
             [peer
              config]     (do
                            (.log.info* "Initializing peer")

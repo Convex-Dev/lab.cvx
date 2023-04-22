@@ -45,10 +45,14 @@
 ;(.client.repl {:address #12 :host "localhost" :key-pair kp :port 18889 :rtt? true})
 
 
-(def net
+#_(def net
      ($.net.local/start "net"
                         10
                         {:dir "/tmp/net"}))
+
+(def net
+     ($.net.local/resume "net"
+                         {:dir "/tmp/net"}))
                  
 
 ;($.net.local/repl.peer net)
