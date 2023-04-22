@@ -52,4 +52,5 @@
                         {:dir "/tmp/net"}))
                  
 
-(.client.repl {:address #12 :host "localhost" :port 18889 :key-pair kp :rtt? true})
+;(.client.repl {:address #12 :host "localhost" :port 18889 :key-pair kp :rtt? true})
+($.net.local/repl.peer net)

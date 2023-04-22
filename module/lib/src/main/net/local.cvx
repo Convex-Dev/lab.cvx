@@ -23,16 +23,6 @@
 
 
 
-(defn repl
-
-  [peer+ i]
-
-  (.worker.repl (nth peer+
-                     i)
-                {:name (str "peer-" i)}))
-                            
-
-
 
 
 
@@ -350,13 +340,14 @@
                                             :i.peer
                                             i.peer)
                                      'start.syncer))))
-             (reduce (fn [peer+ peer.syncer]
-                       (process.ensure-ready peer.syncer
-                                             (count peer+))
-                       (conj peer+
-                              peer.syncer))
-                     [peer.genesis]
-                     peer.syncer+))))))))
+             {:name  name
+              :peer+ (reduce (fn [peer+ peer.syncer]
+                               (process.ensure-ready peer.syncer
+                                                     (count peer+))
+                               (conj peer+
+                                      peer.syncer))
+                             [peer.genesis]
+                             peer.syncer+)})))))))
 
 
 
@@ -406,3 +397,23 @@
     (start-worker (:name config)
                   i.peer
                   (:stream.out.limit config))))
+
+
+
+(defn repl.peer
+
+
+  ([net]
+
+   (repl.peer net
+              nil))
+
+
+  ([net i.peer]
+
+   (.worker.repl {:pipe (str (:name net)
+                             "_" 
+                             (or i.peer
+                                 (.gen (.gen.long.uniform 0
+                                                          (dec (count (:peer+ net))))
+                                       {:seed (.time.unix)})))})))
