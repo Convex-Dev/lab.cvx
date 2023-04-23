@@ -140,10 +140,11 @@
                               "localhost")
                    port   (or (:port option+)
                               .peer.default.port)
-                   config {:host       host
-                           :port       port
-                           :poll-delay (:poll-delay option+)
-                           :root-key   (:root-key option+)}]
+                   config {:host          host
+                           :n.max.sibling (:n.max.sibling option+)
+                           :port          port
+                           :poll-delay    (:poll-delay option+)
+                           :root-key      (:root-key option+)}]
                (.log.info* (str "Peer will run on " (url option+)))
                [(.peer.init kp
                             (assoc config
@@ -175,12 +176,13 @@
                                    "localhost")
                    remote.port (or (:remote.port option+)
                                    .peer.default.port)
-                   config      {:host        host
-                                :port        port
-                                :poll-delay  (:poll-delay option+)
-                                :remote.host remote.host
-                                :remote.port remote.port
-                                :root-key    (:root-key option+)}]
+                   config      {:host          host
+                                :n.max.sibling (:n.max.sibling option+)
+                                :port          port
+                                :poll-delay    (:poll-delay option+)
+                                :remote.host   remote.host
+                                :remote.port   remote.port
+                                :root-key      (:root-key option+)}]
              (.log.info* (str "Peer will run on " (url option+)))
              (.log.info* (str "Peer will sync with " remote.host ":" remote.port))
              [(.peer.init.sync kp
