@@ -18,20 +18,25 @@
                        etch.path.target)))
       (fail :SHELL.PEER
             "Etch instance already open at a different location"))
-      (let [log.stream   (.file.stream.out (or (:log.path option+)
-                                              (str dir- "/log.cvx"))
-                                           {:append? true})
-            _            (do
-                           (.log.out.set log.stream)
-                           (.log.info* (str "Opening Etch instance at '" etch.path.target "'"))
-                           (.db.open etch.path.target))
-            kp           (do
-                           (.log.info* "Creating key pair from seed")
-                           (.kp.create kp.seed))
+      (let [log.stream       (.file.stream.out (or (:log.path option+)
+                                                  (str dir- "/log.cvx"))
+                                               {:append? true})
+            etch.path.origin (:etch.origin option+)
+            _                (do
+                               (.log.out.set log.stream)
+                               (when etch.path.origin
+                                 (.log.info* (str "Copying Etch from '" etch.path.origin "'"))
+                                 (.fs.copy etch.path.origin
+                                           etch.path.target))
+                               (.log.info* (str "Opening Etch instance at '" etch.path.target "'"))
+                               (.db.open etch.path.target))
+            kp               (do
+                               (.log.info* "Creating key pair from seed")
+                               (.kp.create kp.seed))
             [peer
-             config]     (do
-                           (.log.info* "Initializing peer")
-                           (peer.init kp))]
+             config]         (do
+                               (.log.info* "Initializing peer")
+                               (peer.init kp))]
       (when config
         (let [path.config  (.fs.resolve (or (:config.path option+)
                                             (str dir- "/config.cvx")))]
@@ -124,33 +129,45 @@
 (defn start
 
 
-  ([kp.seed state]
+  ([kp.seed]
 
    (start kp.seed
-          state
           nil))
 
 
-  ([kp.seed state option+]
+  ([kp.seed option+]
 
-   (-start kp.seed
-           option+
-           (fn [kp]
-             (let [host   (or (:host option+)
-                              "localhost")
-                   port   (or (:port option+)
-                              .peer.default.port)
-                   config {:host          host
-                           :n.max.sibling (:n.max.sibling option+)
-                           :port          port
-                           :poll-delay    (:poll-delay option+)
-                           :root-key      (:root-key option+)}]
-               (.log.info* (str "Peer will run on " (url option+)))
-               [(.peer.init kp
-                            (assoc config
-                                   :state
-                                   state))
-                config])))))
+   (let [state (:state option+)]
+     (-start kp.seed
+             (if (str? state)
+               (assoc option+
+                      :etch.origin
+                      state)
+               option+)
+             (fn [kp]
+               (let [host   (or (:host option+)
+                                "localhost")
+                     port   (or (:port option+)
+                                .peer.default.port)
+                     config {:host          host
+                             :n.max.sibling (:n.max.sibling option+)
+                             :port          port
+                             :poll-delay    (:poll-delay option+)
+                             :root-key      (:root-key option+)}]
+                 (.log.info* (str "Peer will run on " (url option+)))
+                 [(.peer.init kp
+                              (assoc config
+                                     :state
+                                     (cond
+                                       ;;
+                                       (nil? state)
+                                       (.state.genesis)
+                                       ;;
+                                       (str? state)
+                                       (.db.root.read)
+                                       ;;
+                                       state)))
+                  config]))))))
 
 
 
