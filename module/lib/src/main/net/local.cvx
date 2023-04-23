@@ -141,6 +141,95 @@
 
 
 
+(defn state.genesis.option+
+
+  ([option+]
+
+   (let [peer+        (:peer+ option+)
+         n.peer       (or (:n.peer option+)
+                          (count peer+))
+         kp.seed+     (kp.seed+ n.peer)
+         port.genesis (or (:port.genesis option+)
+                          .peer.default.port)]
+     (loop [acc    []
+            i.peer 0]
+       (if (< i.peer
+              n.peer)
+         (recur (conj acc
+                      (merge (get peer+
+                                  i.peer)
+                             {:key  (.kp.pubkey (.kp.create (get kp.seed+
+                                                                 i.peer)))
+                              :port (+ port.genesis
+                                       i.peer)}))
+                (inc i.peer))
+         {:peer+ acc})))))
+
+
+
+
+
+
+(defn etch.extract
+
+  [command path]
+
+  (let [result  (.stream.in+
+                          (:out
+                            (.process.run
+                              (conj command
+                                    `(do
+                                       (.db.open ~path)
+                                       (.state.switch #12
+                                                      (.db.root.read))
+                                       (let [peer+ (:peers *state*)]
+                                         [(count peer+)
+                                          (get-in peer+
+                                                  [(:key (account *address*))
+                                                   :metadata
+                                                   :url])]))))))
+       _ (when (empty? result)
+           (fail :SHELL.PEER
+                 "Unable to extract information about peers from Etch"))
+       [n.peer
+       url.genesis] (first result)]
+    (when-not (str? url.genesis)
+      (fail :SHELL.PEER
+            "Genesis URL missing"))
+    [n.peer
+     (first (.reader.form+ (second (split url.genesis
+                                          \:))))]))
+
+
+
+(defn etch
+
+
+  ([path]
+
+   (etch path
+         nil))
+
+
+  ([path option+]
+
+   (.log.info* (str "Generating genesis Etch instance at '" (.fs.resolve path) "'"))
+   (.process.success?
+     (.process.run
+       (concat (vec (or (:command option+)
+                        ['cvx]))
+               `[(.db.open ~path)
+                 (let [prepare ~(:prepare option+)
+                       state   (.state.genesis ~(state.genesis.option+ option+))]
+                   (.db.root.write
+                     (if prepare
+                       (.state.core.vanilla (prepare state))
+                       state)))
+                 nil])))
+   path))
+
+
+
 (defn start-worker
 
   [name i.peer stream.out.limit]
@@ -150,7 +239,9 @@
   (let [pipe (str name "_" i.peer)]
     (.log.info* (str "Starting worker named '" pipe "'"))
     (.worker.start {:pipe             pipe
-                    :stream.out.limit stream.out.limit})))
+                    :stream.out.limit stream.out.limit}))
+  nil)
+
 
 
 (defn process.ensure-ready
@@ -199,14 +290,13 @@
         dir.peer (str (:dir config) "/" i.peer)
         peer     (.process.run
                    (conj command
-                         (.cell.str
-                           `(let [$.net.local (get (.dep.deploy '[$.net.local (lib net local)])
-                                                   '$.net.local)]
-                              ((lookup $.net.local
-                                       ~sym.fn)
-                               ~(assoc config
-                                       :dir
-                                       dir.peer)))))
+                         `(let [$.net.local (get (.dep.deploy '[$.net.local (lib net local)])
+                                                 '$.net.local)]
+                            ((lookup $.net.local
+                                     ~sym.fn)
+                             ~(assoc config
+                                     :dir
+                                     dir.peer))))
                    {:err (.file.stream.out (str dir.peer "/err.txt"))})]
     (monitor-exit peer
                   i.peer)
@@ -222,21 +312,20 @@
         dir.peer (str (:dir config) "/" i.peer)
         peer     (.process.run
                    (conj command
-                         (.cell.str
-                           `(let [dep+        (.dep.deploy '[$.net.local (lib net local)
-                                                             $.peer      (lib peer)])
-                                  $.net.local (get dep+
-                                                   '$.net.local)
-                                  $.peer      (get dep+
-                                                   '$.peer)]
-                                                   (.stream.errln [:log ~(:log.level config)])
-                                                   (.stream.flush (.stream.stderr))
-                              (.log.level.set ~(:log.level config))
-                              ($.peer/resume ~(kp.seed i.peer)
-                                             {:dir ~dir.peer})
-                              ($.net.local/start-worker ~(:name config)
-                                                        ~i.peer
-                                                        ~(:stream.out.limit config)))))
+                         `(let [dep+        (.dep.deploy '[$.net.local (lib net local)
+                                                           $.peer      (lib peer)])
+                                $.net.local (get dep+
+                                                 '$.net.local)
+                                $.peer      (get dep+
+                                                 '$.peer)]
+                                                 (.stream.errln [:log ~(:log.level config)])
+                                                 (.stream.flush (.stream.stderr))
+                            (.log.level.set ~(:log.level config))
+                            ($.peer/resume ~(kp.seed i.peer)
+                                           {:dir ~dir.peer})
+                            ($.net.local/start-worker ~(:name config)
+                                                      ~i.peer
+                                                      ~(:stream.out.limit config))))
                    {:err (.file.stream.out (str dir.peer "/err.txt"))})]
     (monitor-exit peer
                   i.peer)
@@ -255,29 +344,44 @@
   ;;       Allow resuming networks.
 
 
-  ([name n.peer]
+  ([name]
 
    (start name
-          n.peer
           nil))
 
 
-  ([name n.peer option+]
+  ([name option+]
 
-   (when (< n.peer
-            1)
-     (fail :ARGUMENT
-           "Must run at least 1 peer"))
    (.log.info* (str "Starting local network '" name "'"))
-   (.log.info* (str "N peers = " n.peer))
    (let [command            (vec (or (:command option+)
                                      '[cvx]))
          dir                ($.peer/dir option+)
          log.level          (or (:log.level option+)
                                 :info)
-         port.genesis       (or (:port.genesis option+)
-                                .peer.default.port)
+         state              (:state option+)
+         [n.peer
+          port.genesis
+          etch.origin]     (if (str? state)
+                              (do
+                                (.log.info* (str "Reusing genesis Etch instance at '" state "'"))
+                                (conj (etch.extract command
+                                                    state)
+                                      state))
+                              (let [path (str dir "/genesis.etch")]
+                                (when-not (etch path
+                                                (assoc option+
+                                                       :n.peer       3
+                                                       :port.genesis 18888))
+                                  (fail :SHELL.PEER
+                                        "Error while generating genesis Etch instance"))
+                                [3
+                                 18888
+                                 path]))
+         _                  (do
+                              (.log.info* (str "N peers = " n.peer))
+                              (.log.info* (str "Genesis port = " port.genesis)))
          config             {:dir              dir
+                             :etch.origin      etch.origin
                              :kp.seed+         (kp.seed+ n.peer)
                              :n.max.sibling    (:n.max.sibling option+)
                              :name             name
@@ -294,7 +398,16 @@
                                            'start.genesis)]
      (process.ensure-ready peer.genesis
                            0)
-     (let [n.peer.syncer (dec n.peer)]
+     (let [config-2      (if (= (:etch.origin.syncer? option+)
+                                false)
+                           (do
+                             (.log.info* "Etch genesis instance will NOT be copied by syncer peers")
+                             (dissoc config
+                                     :etch.origin))
+                           (do
+                             (.log.info* "Etch genesis instance will be copied by syncer peers")
+                             config))
+           n.peer.syncer (dec n.peer)]
        (when (> n.peer.syncer
                 0)
          (.log.info* (str "Starting syncer peers"))
@@ -305,7 +418,7 @@
              (recur (conj peer.syncer+
                           (let [i.peer (inc (count peer.syncer+))]
                             (process.start command
-                                           (assoc config
+                                           (assoc config-2
                                                   :i.peer
                                                   i.peer)
                                            'start.syncer))))
@@ -321,36 +434,20 @@
 
 
 
-
 (defn start.genesis
 
   [config]
 
-  (let [kp.seed+     (:kp.seed+ config)
-        n.peer       (count kp.seed+)
-        port.genesis (:port.genesis config)]
-    (.log.level.set (:log.level config))
-    (def peer
-         (:peer ($.peer/start (first kp.seed+)
-                              (.state.genesis {:peer+
-                                               (loop [acc    []
-                                                      i.peer 0]
-                                                 (if (< i.peer
-                                                        n.peer)
-                                                   (recur (conj acc
-                                                                {:key  (.kp.pubkey (.kp.create (get kp.seed+
-                                                                                                    i.peer)))
-                                                                 :port (+ port.genesis
-                                                                          i.peer)})
-                                                          (inc i.peer))
-                                                   acc))})
-                              {:dir           (:dir config)
-                               :n.max.sibling (:n.max.sibling config)
-                               :poll-delay    (:poll-delay config)
-                               :port          port.genesis})))
-    (start-worker (:name config)
-                  0
-                  (:stream.out.limit config))))
+  (.log.level.set (:log.level config))
+  (def peer
+       (:peer ($.peer/start (first (:kp.seed+ config))
+                            (assoc (dissoc config
+                                           :etch.origin)
+                                   :state
+                                   (:etch.origin config)))))
+  (start-worker (:name config)
+                0
+                (:stream.out.limit config)))
 
 
 
@@ -364,11 +461,10 @@
     (def peer
          (:peer ($.peer/start.sync (get (:kp.seed+ config)
                                         i.peer)
-                                   {:dir           (:dir config)
-                                    :n.max.sibling (:n.max.sibling config)
-                                    :poll-delay    (:poll-delay config)
-                                    :port          (+ port.genesis
-                                                      i.peer)})))
+                                   (assoc config
+                                          :port
+                                          (+ port.genesis
+                                             i.peer)))))
     (start-worker (:name config)
                   i.peer
                   (:stream.out.limit config))))

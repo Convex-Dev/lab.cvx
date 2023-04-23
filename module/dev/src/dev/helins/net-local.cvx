@@ -18,7 +18,7 @@
 (def kp-2
      (.kp.create (.gen (.gen.blob-32) {:seed 13})))
 
-($.peer/start (.kp.seed kp)
+#_($.peer/start (.kp.seed kp)
               {:config.path   "/tmp/peer/config_0.cvx"
                :dir           "/tmp/peer"
                :n.max.sibling 3
@@ -28,7 +28,7 @@
                                                        {:key  (.kp.pubkey kp-2)
                                                         :port 18889}]})})
 
-($.peer/start.sync (.kp.seed kp-2)
+#_($.peer/start.sync (.kp.seed kp-2)
                    {:config.path   "/tmp/peer/config_1.cvx"
                     :dir           "/tmp/peer"
                     :n.max.sibling 3
@@ -47,7 +47,7 @@
                 :dir         "/tmp/peer"
                 :log.path    "/tmp/peer/log_1.cvx"})
 
-(.client.repl {:address #12 :host "localhost" :key-pair kp :port 18889 :rtt? true})
+;(.client.repl {:address #12 :host "localhost" :key-pair kp :port 18889 :rtt? true})
 
 
 #_($.net.local/etch "/tmp/genesis.etch"
@@ -58,13 +58,21 @@
                                (def test :ok)
                                *state*)})
 
-#_(def net
+(def net
      ($.net.local/start "net"
-                        {:dir           "/tmp/net"
-                         :etch.origin   "/tmp/genesis.etch"
-                         :n.peer        10
-                         :n.max.sibling 9
-                         :poll-delay    1000}))
+                        {:dir                 "/tmp/net"
+                         :etch.origin.syncer? true
+                         :n.max.sibling       9
+                         ;:state               "/tmp/genesis.etch"
+                         :state               ($.net.local/etch "/tmp/genesis.etch"
+                                                                {:n.peer  7
+                                                                 :prepare '(fn [state]
+                                                                             (.state.switch #12
+                                                                                            state)
+                                                                             (def ok
+                                                                                  true)
+                                                                             *state*)}) 
+                         :poll-delay          1000}))
 
 #_(def net
      ($.net.local/resume "net"
@@ -73,4 +81,4 @@
 
 ;($.net.local/repl.peer net)
 ;($.net.local/stop net 0)
-;($.net.local/repl.client net #12)
+($.net.local/repl.client net #12)
