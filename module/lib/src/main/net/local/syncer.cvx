@@ -1,0 +1,19 @@
+{:deploy [$.net.local (lib net local)
+          $.peer      (lib peer)]}
+
+
+;;;;;;;;;;
+
+
+(defn main
+
+  [config]
+
+  (let [i.peer       (:i.peer config)
+        port.genesis (:port.genesis config)]
+    (def peer
+         (:peer ($.peer/start.sync ($.net.local/-kp.peer.seed i.peer)
+                                   (assoc config
+                                          :port
+                                          (+ port.genesis
+                                             i.peer)))))))

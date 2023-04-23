@@ -1,0 +1,17 @@
+{:deploy [$.net.local (lib net local)
+          $.peer      (lib peer)]}
+
+
+;;;;;;;;;;
+
+
+(defn main
+
+  [config]
+
+  (def peer
+       (:peer ($.peer/start ($.net.local/-kp.peer.seed 0)
+                            (assoc (dissoc config
+                                           :etch.origin)
+                                   :state
+                                   (:etch.origin config))))))

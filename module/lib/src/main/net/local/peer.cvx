@@ -1,0 +1,21 @@
+{}
+
+
+;;;;;;;;;;
+
+
+(defn main
+
+  [config]
+
+  (.log.level.set (:log.level config))
+  (let [x (get (.dep.deploy `[x ~(:path.actor config)])
+               'x)]
+    (x/main config)
+    (.log.info* "Peer ready to operate")
+    (.stream.outln :ready)
+    (let [pipe (str (:name config) "_" (:i.peer config))]
+      (.log.info* (str "Starting worker named '" pipe "'"))
+      (.worker.start {:pipe             pipe
+                      :stream.out.limit (:stream.out.limit config)}))
+    nil))

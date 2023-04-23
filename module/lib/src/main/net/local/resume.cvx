@@ -1,0 +1,13 @@
+{:deploy [$.net.local (lib net local)
+          $.peer      (lib peer)]}
+
+
+;;;;;;;;;;
+
+
+(defn main
+
+  [config]
+
+  ($.peer/resume ($.net.local/-kp.peer.seed (:i.peer config))
+                 config)
