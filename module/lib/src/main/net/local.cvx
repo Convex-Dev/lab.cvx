@@ -282,6 +282,7 @@
                              :name             name
                              :log.level        (or (:log.level option+)
                                                    :info)
+                             :poll-delay       (:poll-delay option+)
                              :port.genesis     port.genesis
                              :stream.out.limit (:stream.out.limit option+)}
          _                  (.log.info* "Starting peer 0 (genesis peer)")
@@ -342,8 +343,9 @@
                                                                           i.peer)})
                                                           (inc i.peer))
                                                    acc))})
-                              {:dir  (:dir config)
-                               :port port.genesis})))
+                              {:dir        (:dir config)
+                               :poll-delay (:poll-delay config)
+                               :port       port.genesis})))
     (start-worker (:name config)
                   0
                   (:stream.out.limit config))))
@@ -360,9 +362,10 @@
     (def peer
          (:peer ($.peer/start.sync (get (:kp.seed+ config)
                                         i.peer)
-                                   {:dir  (:dir config)
-                                    :port (+ port.genesis
-                                             i.peer)})))
+                                   {:dir        (:dir config)
+                                    :poll-delay (:poll-delay config)
+                                    :port       (+ port.genesis
+                                                   i.peer)})))
     (start-worker (:name config)
                   i.peer
                   (:stream.out.limit config))))
