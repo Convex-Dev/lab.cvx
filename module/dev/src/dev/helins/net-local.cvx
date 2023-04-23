@@ -18,17 +18,19 @@
 (def kp-2
      (.kp.create (.gen (.gen.blob-32) {:seed 13})))
 
-#_($.peer/start (.kp.seed kp)
+($.peer/start (.kp.seed kp)
               (.state.genesis {:peer+ [{:key (.kp.pubkey kp)}
                                        {:key  (.kp.pubkey kp-2)
                                         :port 18889}]})
-              {:config.path   "/tmp/peer/config_0.cvx"
-               :dir           "/tmp/peer"})
+              {:config.path "/tmp/peer/config_0.cvx"
+               :dir         "/tmp/peer"
+               :poll-delay  1000})
 
-#_($.peer/start.sync (.kp.seed kp-2)
+($.peer/start.sync (.kp.seed kp-2)
                    {:config.path "/tmp/peer/config_1.cvx"
                     :dir         "/tmp/peer"
                     :port        18889
+                    :poll-delay  1000
                     :remote.port 18888})
 
 
@@ -42,7 +44,7 @@
                 :dir         "/tmp/peer"
                 :log.path    "/tmp/peer/log_1.cvx"})
 
-;(.client.repl {:address #12 :host "localhost" :key-pair kp :port 18889 :rtt? true})
+(.client.repl {:address #12 :host "localhost" :key-pair kp :port 18889 :rtt? true})
 
 
 #_(def net
@@ -50,11 +52,11 @@
                         10
                         {:dir "/tmp/net"}))
 
-(def net
+#_(def net
      ($.net.local/resume "net"
                          {:dir "/tmp/net"}))
                  
 
 ;($.net.local/repl.peer net)
 ;($.net.local/stop net 0)
-($.net.local/repl.client net #12)
+;($.net.local/repl.client net #12)
