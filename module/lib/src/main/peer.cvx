@@ -8,7 +8,7 @@
 
   ^:private?
 
-  [kp.seed option+ peer.init]
+  [kp.seed resuming? option+ peer.init]
 
   (let [dir-              (dir option+)
         etch.path.target  (.fs.resolve (str dir- "/store.etch"))
@@ -20,10 +20,11 @@
             "Etch instance already open at a different location"))
       (let [log.stream       (.file.stream.out (or (:log.path option+)
                                                   (str dir- "/log.cvx"))
-                                               {:append? true})
+                                               {:append? resuming?})
             etch.path.origin (:etch.origin option+)
             _                (do
                                (.log.out.set log.stream)
+                               (.log.info* "Launching peer")
                                (when etch.path.origin
                                  (.log.info* (str "Copying Etch from '" etch.path.origin "'"))
                                  (.fs.copy etch.path.origin
@@ -97,6 +98,7 @@
      (fail :SHELL.PEER
            "Etch file missing"))
    (-start kp.seed
+           true
            option+
            (fn [kp]
              (let [pubkey      (.kp.pubkey kp)
@@ -139,6 +141,7 @@
 
    (let [state (:state option+)]
      (-start kp.seed
+             false
              (if (str? state)
                (assoc option+
                       :etch.origin
@@ -183,6 +186,7 @@
   ([kp.seed option+]
 
    (-start kp.seed
+           false
            option+
            (fn [kp]
              (let [host        (or (:host option+)
