@@ -42,7 +42,7 @@
           (.log.info* (str "Creating " n.create " accounts"))
           (let [result (.a.take
                          (.client.transact client
-                                           (:kp (first peer+))
+                                           (.kp.create (.kp.seed.dev 12))
                                            (.trx.new.invoke #12
                                                             (code.account+ n.create
                                                                            (+ 45
@@ -66,10 +66,17 @@
 
 (defn load
 
-  [peer+ n.peer n.account n.client]
+  [net n.account #_n.client]
 
-  (let [client-pool ($.client.pool/connect.range n.client
+  (when-not (.db.path)
+    (.db.open (.fs.tmp)))
+  (let [peer+       (:peer+ net)
+        n.peer      (count peer+)
+        _           (trx.account+ peer+
+                                  n.account)
+        client-pool ($.client.pool/connect.range n.account #_n.client
                                                  n.peer)]
+
     (loop [acc []
            i   0]
       (if (< i
@@ -77,14 +84,13 @@
         (recur (conj acc
                      (.a.do*
                        (let [addr.long (+ 45
-                                          (dec (count peer+))
+                                          (dec n.peer)
                                           i)
                              addr      (address addr.long)
                              client    (nth client-pool
                                             (mod i
                                                  (count client-pool)))
-                             kp        (.kp.create (.gen (.gen.blob-32)
-                                                         {:seed addr.long}))]
+                             kp        (.kp.create (.kp.seed.dev addr.long))]
                          (loop [i 1]
                            (let [trx      (.kp.sign kp
                                                     (.trx.new.invoke addr

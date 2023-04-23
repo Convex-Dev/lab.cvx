@@ -62,17 +62,17 @@
      ($.net.local/start "net"
                         {:dir                 "/tmp/net"
                          :etch.origin.syncer? true
-                         :n.max.sibling       9
+                         ;:n.max.sibling       9
                          ;:state               "/tmp/genesis.etch"
                          :state               ($.net.local/etch "/tmp/genesis.etch"
-                                                                {:n.peer  7
+                                                                {:n.peer  10
                                                                  :prepare '(fn [state]
                                                                              (.state.switch #12
                                                                                             state)
                                                                              (def ok
                                                                                   true)
                                                                              *state*)}) 
-                         :poll-delay          1000}))
+                         :poll-delay          1000000}))
 
 #_(def net
      ($.net.local/resume "net"
@@ -81,4 +81,7 @@
 
 ;($.net.local/repl.peer net)
 ;($.net.local/stop net 0)
+
 ($.net.local/repl.client net #12)
+
+;($.net.local/load net 500)
