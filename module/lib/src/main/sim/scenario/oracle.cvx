@@ -1,0 +1,85 @@
+{:deploy [$.state (lib state)]}
+
+
+;;;;;;;;;;
+
+
+(defn state
+
+  [state n.oracle n.user]
+
+  (when (> n.oracle
+           n.user)
+    (fail :ARGUMENT
+          "Number of oracle must be <= number of users"))
+  (let [config           ($.state/user+ state
+                                        n.user
+                                        nil)
+        base.user        (:base.user config)
+        base.oracle      (+ base.user
+                            n.user)]
+    (loop [i.oracle 0
+           state-2  (:state config)]
+      (if (< i.oracle
+             n.oracle)
+        (recur (inc i.oracle)
+               (second ($.state/exec state-2
+                                     `(deploy
+                                        '(do
+                                           (import convex.trust :as trust)
+                                           (def whitelist
+                                                (deploy (trust/build-whitelist
+                                                          {:whitelist ~(loop [acc    #{}
+                                                                              i.user i.oracle]
+                                                                         (if (< i.user
+                                                                                n.user)
+                                                                           (recur (conj acc
+                                                                                        (address (+ base.user
+                                                                                                    i.user)))
+                                                                                  (+ i.user
+                                                                                     n.oracle))
+                                                                           acc))})))
+                                          (def log
+                                               [])
+                                          (defn add
+                                            ^:callable?
+                                            [x]
+                                            (when-not (trust/trusted? whitelist
+                                                                      *caller*)
+                                              (fail :TRUST
+                                                    "This should not happen"))
+                                            (def log
+                                                 (conj log
+                                                       x))
+                                            (count log)))))))
+        (assoc config
+               :base.oracle base.oracle
+               :n.oracle    n.oracle
+               :state       state-2)))))
+
+
+
+(defn gen.trx
+
+  [config]
+
+  (let [base.oracle (:base.oracle config)
+        base.user   (:base.user config)
+        n.oracle    (:n.oracle config)
+        n.user      (:n.user config)
+        gen.x       (.gen.long)]
+    (fn [i.user]
+      (let [origin (address (+ base.user
+                               i.user))
+            oracle (address (+ base.oracle
+                               (* 2 ; each oracle also deployed a whitelist
+                                  (mod i.user
+                                       n.oracle))))]
+        (fn [sequence]
+          (.gen.fmap (fn [x]
+                       (.trx.new.call origin
+                                      oracle
+                                      'add
+                                      [x]
+                                      {:sequence sequence}))
+                     gen.x))))))

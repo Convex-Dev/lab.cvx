@@ -19,9 +19,9 @@
                             n.user)]
     (loop [i.token 0
            state-2 (second ($.state/exec (:state config)
-                                        '(do
-                                           (import convex.asset :as asset)
-                                           (import convex.fungible :as fun))))]
+                                         '(do
+                                            (import convex.asset :as asset)
+                                            (import convex.fungible :as fun))))]
       (if (< i.token
              n.token)
         (recur (inc i.token)
@@ -64,9 +64,9 @@
                                                          n.user))))
         gen.param+ (.gen.tuple [gen.target
                                 gen.token])]
-    (fn [i.client]
+    (fn [i.user]
       (let [origin (address (+ base.user
-                               i.client))]
+                               i.user))]
         (fn [sequence]
           (.gen.fmap (fn [[target token]]
                        (.trx.new.invoke origin

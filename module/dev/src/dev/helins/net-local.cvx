@@ -2,6 +2,7 @@
           $.peer                  (lib peer)
           $.sim.load              (lib sim load)
           $.sim.scenario.empty    (lib sim scenario empty)
+          $.sim.scenario.oracle   (lib sim scenario oracle)
           $.sim.scenario.fungible (lib sim scenario fungible)
           $.sim.scenario.transfer (lib sim scenario transfer)
           $.state                 (lib state)
@@ -75,8 +76,8 @@
   []
 
   (.db.open "/tmp/genesis.etch")
-  (let [param+ ($.sim.scenario.fungible/state ($.net.local/state.genesis {:n.peer 3})
-                                              2
+  (let [param+ ($.sim.scenario.oracle/state ($.net.local/state.genesis {:n.peer 3})
+                                              10
                                               100)]
     (.db.root.write (:state param+))
     (.file.write "/tmp/genesis.cvx"
@@ -120,7 +121,7 @@
 
 (let [config (first (.file.read "/tmp/genesis.cvx"))]
   ($.net.local/load net
-                    $.sim.scenario.transfer/gen.trx
+                    $.sim.scenario.oracle/gen.trx
                     config))
                     
 
@@ -132,6 +133,4 @@
 
 
 
-;(.gen ((($.sim.scenario.empty/gen.trx {:base 48 :n.account 100}) 50) 42))
-;(.gen ((($.sim.scenario.transfer/gen.trx {:base 48 :n.account 100}) 50) 42))
-;(.gen ((($.sim.scenario.fungible/gen.trx {:base 48 :n.token 2 :n.user 100}) 50) 42))
+;(.gen ((($.sim.scenario.oracle/gen.trx {:base.user 47 :base.oracle 147 :n.oracle 10 :n.user 100}) 50) 42))
