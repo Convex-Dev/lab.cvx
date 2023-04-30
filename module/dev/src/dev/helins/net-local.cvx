@@ -1,5 +1,6 @@
 {:deploy [$.net.local             (lib net local)
           $.peer                  (lib peer)
+          $.sim.load              (lib sim load)
           $.sim.scenario.empty    (lib sim scenario empty)
           $.sim.scenario.fungible (lib sim scenario fungible)
           $.sim.scenario.transfer (lib sim scenario transfer)
@@ -118,7 +119,7 @@
 
 
 (let [config (first (.file.read "/tmp/genesis.cvx"))]
-  ($.net.local/load net
+  ($.sim.load/local net
                     $.sim.scenario.fungible/gen.trx
                     config))
                     

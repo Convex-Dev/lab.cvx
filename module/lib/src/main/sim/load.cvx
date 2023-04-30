@@ -1,0 +1,52 @@
+{:deploy [$.client.pool (lib client pool)]}
+
+
+;;;;;;;;;;
+
+
+(defn local
+
+  [net gen.trx config]
+
+  (when-not (.db.path)
+    (.db.open (.fs.tmp)))
+  (let [peer+       (:peer+ net)
+        n.peer      (count peer+)
+        gen.trx-2   (gen.trx config)
+        base.user   (:base.user config)
+        n.user      (:n.user config)
+        client-pool ($.client.pool/connect.range n.user
+                                                 n.peer)]
+    (loop [acc    []
+           i.user 0]
+      (if (< i.user
+             n.user)
+        (recur (conj acc
+                     (.a.do*
+                       (let [addr.long (+ base.user
+                                          i.user)
+                             addr      (address addr.long)
+                             client    (nth client-pool
+                                            (mod i.user
+                                                 (count client-pool)))
+                             kp        (.kp.create (.kp.seed.dev addr.long))
+                             gen.trx-3 (gen.trx-2 i.user)]
+                         (loop [sequence 1]
+                           (let [trx      (.kp.sign kp
+                                                    (.gen (gen.trx-3 sequence)))
+                                 ;; TODO. Add timeout.
+                                 [rtt
+                                  result] (.time.do*
+                                            (.a.take (.client.transact client
+                                                                       trx)))]
+                             (.log.report* [addr (/ rtt 1e6) result])
+                             ;(.time.sleep (.gen (.gen.long.uniform 0
+                             ;                                      50)))
+                             (recur
+                               (if (= (:error result)
+                                      :SEQUENCE)
+                                 (.a.take (.client.sequence client
+                                                            addr))
+                                 (inc sequence))))))))
+               (inc i.user))
+        acc))))
