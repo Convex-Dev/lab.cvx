@@ -25,10 +25,6 @@
                                                  (dec (+ base.user
                                                          n.user))))]
     (fn [i.user]
-      (when (> i.user
-               n.user)
-        (fail :NOBODY
-              "No account for this client"))
       (let [origin (address (+ base.user
                                i.user))]
         (fn [sequence]

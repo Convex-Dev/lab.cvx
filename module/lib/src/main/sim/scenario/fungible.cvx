@@ -65,10 +65,6 @@
         gen.param+ (.gen.tuple [gen.target
                                 gen.token])]
     (fn [i.client]
-      (when (> i.client
-               n.user)
-        (fail :NOBODY
-              "No account for this client"))
       (let [origin (address (+ base.user
                                i.client))]
         (fn [sequence]
