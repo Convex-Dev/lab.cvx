@@ -1,4 +1,6 @@
-{:deploy [$.peer (lib peer)]}
+{:deploy [$.client.pool (lib client pool)
+          $.peer        (lib peer)
+          $.sim.load    (lib sim load)]}
 
 
 ;;;;;;;;;; Private helpers
@@ -480,3 +482,25 @@
                                  (.gen (.gen.long.uniform 0
                                                           (dec (count (:peer+ net))))
                                        {:seed (.time.unix)})))})))
+
+
+;;;;;;;;;; Load
+
+
+(defn client.pool
+
+  [net n.user]
+
+  ($.client.pool/connect.range n.user
+                               (count (:peer+ net))))
+
+
+
+(defn load
+
+  [net gen.trx config]
+
+  ($.sim.load/start gen.trx
+                    (client.pool net
+                                 (:n.user config))
+                    config))

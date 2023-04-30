@@ -4,19 +4,14 @@
 ;;;;;;;;;;
 
 
-(defn local
+(defn start
 
-  [net gen.trx config]
+  [gen.trx client+ config]
 
-  (when-not (.db.path)
-    (.db.open (.fs.tmp)))
-  (let [peer+       (:peer+ net)
-        n.peer      (count peer+)
-        gen.trx-2   (gen.trx config)
-        base.user   (:base.user config)
-        n.user      (:n.user config)
-        client-pool ($.client.pool/connect.range n.user
-                                                 n.peer)]
+  (let [gen.trx-2 (gen.trx config)
+        base.user (:base.user config)
+        n.user    (:n.user config)
+        n.client  (count client+)]
     (loop [acc    []
            i.user 0]
       (if (< i.user
@@ -26,9 +21,9 @@
                        (let [addr.long (+ base.user
                                           i.user)
                              addr      (address addr.long)
-                             client    (nth client-pool
+                             client    (nth client+
                                             (mod i.user
-                                                 (count client-pool)))
+                                                 n.client))
                              kp        (.kp.create (.kp.seed.dev addr.long))
                              gen.trx-3 (gen.trx-2 i.user)]
                          (loop [sequence 1]

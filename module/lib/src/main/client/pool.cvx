@@ -22,6 +22,8 @@
    (when (empty? end-point+)
      (fail :ARGUMENT
            "Must provide at least 1 end point"))
+   (when-not (.db.path)
+     (.db.open (.fs.tmp)))
    (let [n.end-point (count end-point+)
          n.client-2  (or n.client
                          n.end-point)]
@@ -50,19 +52,19 @@
 
   ([n.client n.peer option+]
 
-   (let [host      (:host option+)
-         port.base (or (:port.base option+)
-                       .peer.default.port)]
+   (let [base.port (or (:base.port option+)
+                       .peer.default.port)
+         host      (:host option+)]
      (connect n.client
-              (loop [acc []
-                     i   0]
-                (if (< i
+              (loop [acc    []
+                     i.peer 0]
+                (if (< i.peer
                        n.peer)
                   (recur (conj acc
                                {:host host
-                                :port (+ port.base
-                                         i)})
-                         (inc i))
+                                :port (+ base.port
+                                         i.peer)})
+                         (inc i.peer))
                   acc))))))
 
 

@@ -119,7 +119,7 @@
 
 
 (let [config (first (.file.read "/tmp/genesis.cvx"))]
-  ($.sim.load/local net
+  ($.net.local/load net
                     $.sim.scenario.transfer/gen.trx
                     config))
                     
