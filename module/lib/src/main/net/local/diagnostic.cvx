@@ -6,7 +6,7 @@
 
 (defn consensus
 
-  [peer+]
+  [net]
 
   (map (fn [status]
          (.stream.txt.out "Peer ")
@@ -20,24 +20,24 @@
          (.stream.txt.out "Consensus state hash: ")
          (.stream.outln (:hash.state.consensus status))
          (.stream.txt.outln ""))
-       ($.net.local.diagnostic.impl/consensus peer+))
+       ($.net.local.diagnostic.impl/consensus (:peer+ net)))
   nil)
 
 
 
 (defn consensus.matrix
 
-  [peer+]
+  [net]
 
   (map .stream.outln
-       ($.net.local.diagnostic.impl/consensus.matrix peer+))
+       ($.net.local.diagnostic.impl/consensus.matrix (:peer+ net)))
   nil)
 
 
 
 (defn convergence
 
-  [peer+]
+  [net]
 
   (map (fn [[point.consensus hash.state.consensus->i.peer+]]
          (.stream.txt.outln (str "Consensus point = " point.consensus))
@@ -45,16 +45,16 @@
                 (.stream.txt.outln (str "Consensus state = " hash.state.consensus " <- " i.peer+)))
               hash.state.consensus->i.peer+)
          (.stream.txt.outln ""))
-       ($.net.local.diagnostic.impl/convergence peer+))
+       ($.net.local.diagnostic.impl/convergence (:peer+ net)))
   nil)
 
 
 
 (defn convergence.fake
 
-  [peer+]
+  [net]
 
-  (let [pair+ ($.net.local.diagnostic.impl/convergence.fake peer+)]
+  (let [pair+ ($.net.local.diagnostic.impl/convergence.fake (:peer+ net))]
     (if (empty? pair+)
       (.stream.txt.outln "All peers with the same consensus point are fully aligned")
       (do
@@ -69,13 +69,13 @@
 
 (defn divergence
 
-  [peer+ i.peer-1 i.peer-2]
+  [net i.peer-1 i.peer-2]
 
   (when-let [[cp.joint
               n.diff
               n.aligned
               last-block-1+
-              last-block-2+] ($.net.local.diagnostic.impl/divergence peer+
+              last-block-2+] ($.net.local.diagnostic.impl/divergence (:peer+ net)
                                                                      i.peer-1
                                                                      i.peer-2)]
          (.stream.txt.outln "")
