@@ -75,9 +75,9 @@
   []
 
   (.db.open "/tmp/genesis.etch")
-  (let [param+ ($.sim.scenario.fungible/state ($.net.local/state.genesis {:n.peer 10})
+  (let [param+ ($.sim.scenario.fungible/state ($.net.local/state.genesis {:n.peer 3})
                                               2
-                                              2500)]
+                                              100)]
     (.db.root.write (:state param+))
     (.file.write "/tmp/genesis.cvx"
                  (dissoc param+
@@ -120,7 +120,7 @@
 
 (let [config (first (.file.read "/tmp/genesis.cvx"))]
   ($.sim.load/local net
-                    $.sim.scenario.fungible/gen.trx
+                    $.sim.scenario.transfer/gen.trx
                     config))
                     
 

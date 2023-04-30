@@ -8,27 +8,9 @@
 
   [state n.user]
 
-  (let [base.user       (count (:accounts state))
-        balance.initial (long (/ (get-in state
-                                         [:accounts
-                                          (long .account.genesis)
-                                          :balance])
-                                 n.user))]
-    (loop [i.user  0
-           state-2 state]
-      (if (< i.user
-             n.user)
-        (let [pubkey    (.kp.pubkey (.kp.create (.kp.seed.dev (+ base.user
-                                                                 i.user))))
-              code      `(let [addr (create-account ~pubkey)]
-                           (transfer addr
-                                     ~balance.initial))]
-          (recur (inc i.user)
-                 (second ($.state/exec state-2
-                                       code))))
-          {:base.user base.user
-           :n.user    n.user
-           :state     state-2}))))
+  ($.state/user+ state
+                 n.user
+                 nil))
 
 
 
