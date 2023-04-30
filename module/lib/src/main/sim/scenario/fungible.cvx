@@ -1,0 +1,98 @@
+{:deploy [$.state (lib state)]}
+
+
+;;;;;;;;;;
+
+
+(defn state
+
+  [state n.token n.user]
+
+  (let [base             (count (:accounts state))
+        base.user        (+ base
+                            n.token)
+        n.token-per-user 1000000000
+        supply           (* n.token-per-user
+                            n.user)
+        balance.initial  (long (/ (get-in state
+                                        [:accounts
+                                         (long .account.genesis)
+                                         :balance])
+                                n.user))
+        ]
+    (loop [i.token 0
+           state-2 (second ($.state/exec state
+                                        '(do
+                                           (import convex.asset :as asset)
+                                           (import convex.fungible :as fun))))]
+      (if (< i.token
+             n.token)
+        (recur (inc i.token)
+               (second ($.state/exec state-2
+                                     `(deploy (fun/build-token {:supply ~supply})))))
+        (loop [i.user  0
+               state-3 state-2]
+          (if (< i.user
+                 n.user)
+            (recur (inc i.user)
+                   (second ($.state/exec state-3
+                                         (let [pubkey (.kp.pubkey (.kp.create (.kp.seed.dev (+ base.user
+                                                                                               i.user))))]
+                                           `(let [addr (deploy '(do
+                                                                  (set-key ~pubkey)
+                                                                  (import convex.asset :as asset)))]
+                                              (transfer addr
+                                                        ~balance.initial)
+                                              ~(cons 'do
+                                                     (loop [acc     []
+                                                            i.token 0]
+                                                       (if (< i.token
+                                                              n.token)
+                                                         (recur (conj acc
+                                                                      `(asset/transfer addr
+                                                                                       [~(address (+ base
+                                                                                                     i.token))
+                                                                                        ~n.token-per-user]))
+                                                                (inc i.token))
+                                                         acc))))))))
+            {:base.token base
+             :base.user  base.user
+             :n.token    n.token
+             :n.user     n.user
+             :state      state-3}))))))
+
+   
+
+(defn gen.trx
+
+  [config]
+
+  (let [base.token (:base.token config)
+        base.user  (:base.user config)
+        n.token    (:n.token config)
+        n.user     (:n.user config)
+        gen.token  (.gen.fmap address
+                              (.gen.long.uniform base.token
+                                                 (dec (+ base.token
+                                                         n.token))))
+        gen.target (.gen.fmap address
+                              (.gen.long.uniform base.user
+                                                 (dec (+ base.user
+                                                         n.user))))
+        gen.param+ (.gen.tuple [gen.target
+                                gen.token])]
+    (fn [i.client]
+      (when (> i.client
+               n.user)
+        (fail :NOBODY
+              "No account for this client"))
+      (let [origin (address (+ base.user
+                               i.client))]
+        (fn [sequence]
+          (.gen.fmap (fn [[target token]]
+                       (.trx.new.invoke origin
+                                        `(asset/transfer ~target
+                                                         [~token
+                                                          1])
+                                        {:sequence sequence}))
+                     gen.param+))))))

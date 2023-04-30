@@ -10,4 +10,4 @@
   [config]
 
   ($.peer/resume ($.net.local/-kp.peer.seed (:i.peer config))
-                 config)
+                 config))

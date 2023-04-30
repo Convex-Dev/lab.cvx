@@ -1,9 +1,16 @@
-{:deploy [$.net.local (lib net local)
-          $.peer      (lib peer)
-          dia         (lib net local diagnostic)]}
+{:deploy [$.net.local             (lib net local)
+          $.peer                  (lib peer)
+          $.sim.scenario.empty    (lib sim scenario empty)
+          $.sim.scenario.fungible (lib sim scenario fungible)
+          $.sim.scenario.transfer (lib sim scenario transfer)
+          $.state                 (lib state)
+          dia                     (lib net local diagnostic)]}
 
 
 (.log.level.set :info)
+
+(import convex.asset :as asset)
+(import convex.fungible :as fun)
 
 
 ;;;;;;;;;;
@@ -58,21 +65,46 @@
                                (def test :ok)
                                *state*)})
 
+
+
+    
+
+(defn gs
+
+  []
+
+  (.db.open "/tmp/genesis.etch")
+  (let [param+ ($.sim.scenario.fungible/state ($.net.local/state.genesis {:n.peer 10})
+                                              2
+                                              2500)]
+    (.db.root.write (:state param+))
+    (.file.write "/tmp/genesis.cvx"
+                 (dissoc param+
+                         :state)))
+  nil)
+
+
 (def net
      ($.net.local/start "net"
-                        {:dir                 "/tmp/net"
-                         :etch.origin.syncer? true
+                        {:log.level :debug
+                            ;:cmd                 '[jcvx]
+                         :dir                 "/tmp/net"
+                         :etch.origin.syncer? false
                          ;:n.max.sibling       9
-                         ;:state               "/tmp/genesis.etch"
-                         :state               ($.net.local/etch "/tmp/genesis.etch"
-                                                                {:n.peer  10
-                                                                 :prepare '(fn [state]
-                                                                             (.state.switch #12
-                                                                                            state)
-                                                                             (def ok
-                                                                                  true)
-                                                                             *state*)}) 
-                         :poll-delay          1000000}))
+                         :state               "/tmp/genesis.etch"
+                         ;:state               ($.net.local/etch "/tmp/genesis.etch"
+                         ;                                       {:n.peer  10
+                         ;                                        ;:peer+   {0 {:stake 100}
+                         ;                                        ;          1 {:stake 100}
+                         ;                                        ;          2 {:stake 100}}
+                         ;                                        :prepare '(fn [state]
+                         ;                                                    (.state.switch #12
+                         ;                                                                   state)
+                         ;                                                    (def ok
+                         ;                                                         true)
+                         ;                                                    *state*)}) 
+                         ;:poll-delay          1000000000
+                     }))
 
 #_(def net
      ($.net.local/resume "net"
@@ -82,6 +114,23 @@
 ;($.net.local/repl.peer net)
 ;($.net.local/stop net 0)
 
-($.net.local/repl.client net #12)
+;($.net.local/repl.client net #12)
 
-;($.net.local/load net 500)
+
+(let [config (first (.file.read "/tmp/genesis.cvx"))]
+  ($.net.local/load net
+                    $.sim.scenario.fungible/gen.trx
+                    config))
+                    
+
+;(.state.switch ($.net.local/state.genesis {:n.peer 3}))
+;(count (:accounts *state*))
+
+;(count (:accounts (:state ($.state/account+ ($.net.local/state.genesis {:n.peer 3}) 10000))))
+;(.state.switch .account.genesis ($.net.local/state.genesis {:n.peer 3}))
+
+
+
+;(.gen ((($.sim.scenario.empty/gen.trx {:base 48 :n.account 100}) 50) 42))
+;(.gen ((($.sim.scenario.transfer/gen.trx {:base 48 :n.account 100}) 50) 42))
+;(.gen ((($.sim.scenario.fungible/gen.trx {:base 48 :n.token 2 :n.user 100}) 50) 42))

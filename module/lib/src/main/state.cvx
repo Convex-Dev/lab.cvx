@@ -71,3 +71,62 @@
 
   (.gen.map (.gen.syntax (.gen.symbol))
             (.gen.any)))
+
+
+
+
+
+(defn exec
+
+
+  ([state code]
+
+    (exec nil
+          state
+          code))
+
+
+  ([addr state code]
+
+   (let [addr-2 (or addr
+                    .account.genesis)
+         eval   eval
+         [ok?
+          x]    (.state.tmp*
+                  (.state.switch addr-2
+                                 state)
+                  [(eval code)
+                   *state*])]
+     (if ok?
+       x
+       (.ex.rethrow x)))))
+
+
+
+
+(defn account+
+
+  [state n.account]
+
+  (let [base            (count (:accounts state))
+        balance.initial (long (/ (get-in state
+                                         [:accounts
+                                          (long .account.genesis)
+                                          :balance])
+                                 n.account))]
+    (loop [i.account 0
+           state-2   state]
+      (if (< i.account
+             n.account)
+        (let [pubkey    (.kp.pubkey (.kp.create (.kp.seed.dev (+ base
+                                                                 i.account))))
+              code      `(let [addr (create-account ~pubkey)]
+                           (transfer addr
+                                     ~balance.initial))]
+          (recur (inc i.account)
+                 (second (exec .account.genesis
+                               state-2
+                               code))))
+          {:base      base
+           :n.account n.account
+           :state     state-2}))))

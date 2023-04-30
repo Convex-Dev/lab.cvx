@@ -5,98 +5,36 @@
 ;;;;;;;;;
 
 
-(defn code.account+
-
-  [n seed]
-
-  (loop [acc []
-         i   0]
-    (if (< i
-           n)
-      (recur (conj acc
-                   `(transfer (deploy '(set-key ~(.kp.pubkey (.kp.create (.gen (.gen.blob-32)
-                                                                               {:seed (+ seed
-                                                                                         i)})))))
-                              100000000))
-             (inc i))
-      (cons 'do
-            acc))))
-
-
-
-(defn trx.account+
-
-  [peer+ n]
-
-  (when-not (.db.path)
-    (.db.open (.fs.tmp)))
-  (.try.resrc* [client (.client.connect)
-                       (.client.close client)]
-    (loop [seq         (.a.take (.client.sequence client
-                                                  #11))
-           n.remaining n]
-      (when (> n.remaining
-               0)
-        (let [n.create (min n.remaining
-                            250)]
-          (.log.info* (str "Creating " n.create " accounts"))
-          (let [result (.a.take
-                         (.client.transact client
-                                           (.kp.create (.kp.seed.dev 12))
-                                           (.trx.new.invoke #12
-                                                            (code.account+ n.create
-                                                                           (+ 45
-                                                                              (- n
-                                                                                 n.remaining)
-                                                                              (dec (count peer+))))
-                                                                              {:sequence seq}))
-                         10000
-                         :timeout)]
-            (when (or (= result
-                         :timeout)
-                      (:error result))
-              (.log.fatal* [:account-creation result])
-              (fail :SETUP
-                    "Unable to create accounts")))
-          (recur (inc seq)
-                 (- n.remaining
-                    n.create)))))))
- 
-
-
 (defn load
 
-  [net n.account #_n.client]
+  [net gen.trx config]
 
   (when-not (.db.path)
     (.db.open (.fs.tmp)))
   (let [peer+       (:peer+ net)
         n.peer      (count peer+)
-        _           (trx.account+ peer+
-                                  n.account)
-        client-pool ($.client.pool/connect.range n.account #_n.client
+        gen.trx-2   (gen.trx config)
+        base.user   (:base.user config)
+        n.user      (:n.user config)
+        client-pool ($.client.pool/connect.range n.user
                                                  n.peer)]
-
-    (loop [acc []
-           i   0]
-      (if (< i
-             n.account)
+    (loop [acc    []
+           i.user 0]
+      (if (< i.user
+             n.user)
         (recur (conj acc
                      (.a.do*
-                       (let [addr.long (+ 45
-                                          (dec n.peer)
-                                          i)
+                       (let [addr.long (+ base.user
+                                          i.user)
                              addr      (address addr.long)
                              client    (nth client-pool
-                                            (mod i
+                                            (mod i.user
                                                  (count client-pool)))
-                             kp        (.kp.create (.kp.seed.dev addr.long))]
-                         (loop [i 1]
+                             kp        (.kp.create (.kp.seed.dev addr.long))
+                             gen.trx-3 (gen.trx-2 i.user)]
+                         (loop [sequence 1]
                            (let [trx      (.kp.sign kp
-                                                    (.trx.new.invoke addr
-                                                                     `(def foo
-                                                                           ~(.gen (.gen.long)))
-                                                                     {:sequence i}))
+                                                    (.gen (gen.trx-3 sequence)))
                                  [rtt
                                   result] (.time.do*
                                             (.a.take (.client.transact client
@@ -109,8 +47,8 @@
                                       :SEQUENCE)
                                  (.a.take (.client.sequence client
                                                             addr))
-                                 (inc i))))))))
-               (inc i))
+                                 (inc sequence))))))))
+               (inc i.user))
         acc))))
 
 
@@ -405,29 +343,30 @@
                              (.log.info* "Etch genesis instance will be copied by syncer peers")
                              config))
            n.peer.syncer (dec n.peer)]
-       (when (> n.peer.syncer
-                0)
-         (.log.info* (str "Starting syncer peers"))
-         (.log.info* (str "N syncers = " n.peer.syncer))
-         (loop [peer.syncer+ []]
-           (if (< (count peer.syncer+)
-                         n.peer.syncer)
-             (recur (conj peer.syncer+
-                          (let [i.peer (inc (count peer.syncer+))]
-                            (-process.start cmd
-                                            '(lib net local syncer)
-                                            (assoc config-2
-                                                   :i.peer
-                                                   i.peer)))))
-             {:name         name
-              :peer+        (reduce (fn [peer+ peer.syncer]
-                                      (-process.ensure-ready peer.syncer
-                                                             (count peer+))
-                                      (conj peer+
-                                            peer.syncer))
-                                    [peer.genesis]
-                                    peer.syncer+)
-              :port.genesis port.genesis})))))))
+       (if (zero? n.peer.syncer)
+         (.log.info* "No syncer peer")
+         (do
+           (.log.info* (str "Starting syncer peers"))
+           (.log.info* (str "N syncers = " n.peer.syncer))))
+       (loop [peer.syncer+ []]
+         (if (< (count peer.syncer+)
+                       n.peer.syncer)
+           (recur (conj peer.syncer+
+                        (let [i.peer (inc (count peer.syncer+))]
+                          (-process.start cmd
+                                          '(lib net local syncer)
+                                          (assoc config-2
+                                                 :i.peer
+                                                 i.peer)))))
+           {:name         name
+            :peer+        (reduce (fn [peer+ peer.syncer]
+                                    (-process.ensure-ready peer.syncer
+                                                           (count peer+))
+                                    (conj peer+
+                                          peer.syncer))
+                                  [peer.genesis]
+                                  peer.syncer+)
+            :port.genesis port.genesis}))))))
 
 
 ;;;;;;;;;; Stopping peers
@@ -566,10 +505,15 @@
                         option+
                         {:address addr
                          :host     "localhost"
-                         :port     (+ (:port.genesis net)
-                                      (.gen (.gen.long.uniform 0
-                                                               (dec (count (:peer+ net))))
-                                            {:seed (.time.unix)}))}))))
+                         :port     (let [n.peer       (count (:peer+ net))
+                                         port.genesis (:port.genesis net)]
+                                     (if (= 1
+                                            n.peer)
+                                       port.genesis
+                                       (+ port.genesis
+                                          (.gen (.gen.long.uniform 0
+                                                                  (dec n.peer))
+                                                {:seed (.time.unix)}))))}))))
 
 
 (defn repl.peer
