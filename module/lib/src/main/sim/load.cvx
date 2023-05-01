@@ -26,6 +26,8 @@
          gen.trx-2 (gen.trx config)
          base.user (:base.user config)
          n.user    (:n.user config)
+         gen.seed  (long (/ 9223372036854775807
+                            n.user))
          client+   ($.client.pool/connect n.user
                                           ($.net/url+ option+))]
      (loop [acc    []
@@ -44,9 +46,12 @@
                                                                n.user))
                                            kp        (.kp.create (.kp.seed.dev addr.long))
                                            gen.trx-3 (gen.trx-2 i.user)]
-                                       (loop [sequence 1]
+                                       (loop [gen.seed-2 (* gen.seed
+                                                            i.user)
+                                              sequence   1]
                                          (let [trx      (.kp.sign kp
-                                                                  (.gen (gen.trx-3 sequence)))
+                                                                  (.gen (gen.trx-3 sequence)
+                                                                        {:seed gen.seed-2}))
                                                ;; TODO. Add timeout.
                                                [rtt
                                                 result] (.time.do*
@@ -56,11 +61,12 @@
                                            ;(.time.sleep (.gen (.gen.long.uniform 0
                                            ;                                      50)))
                                            (recur
+                                             (inc gen.seed-2)
                                              (if (= (:error result)
                                                     :SEQUENCE)
                                                (.a.take (.client.sequence client
                                                                           addr))
-                                           (inc sequence)))))))]
+                                               (inc sequence)))))))]
                           (when-not ok?
                             (.log.error* [:client x])))))
                 (inc i.user))
