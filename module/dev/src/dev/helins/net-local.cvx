@@ -3,6 +3,7 @@
           $.peer                  (lib peer)
           $.sim.load              (lib sim load)
           $.sim.scenario.empty    (lib sim scenario empty)
+          $.sim.scenario.nft      (lib sim scenario nft)
           $.sim.scenario.oracle   (lib sim scenario oracle)
           $.sim.scenario.fungible (lib sim scenario fungible)
           $.sim.scenario.transfer (lib sim scenario transfer)
@@ -12,6 +13,7 @@
 
 (.log.level.set :info)
 
+(import asset.nft.tokens :as nft)
 (import convex.asset :as asset)
 (import convex.fungible :as fun)
 
@@ -77,8 +79,8 @@
   []
 
   (.db.open "/tmp/genesis.etch")
-  (let [config ($.sim.scenario.oracle/state ($.net.local/state.genesis {:n.peer 3})
-                                            10
+  (let [config ($.sim.scenario.nft/state ($.net.local/state.genesis {:n.peer 3})
+                                            20
                                             100)]
     (.db.root.write (:state config)))
   nil)
@@ -117,7 +119,7 @@
 ;($.net.local/repl.client net #12)
 
 
-($.net.local/load $.sim.scenario.oracle/gen.trx)
+($.net.local/load $.sim.scenario.nft/gen.trx)
 
 
                     

@@ -1,0 +1,64 @@
+{:deploy [$.sim.state (lib sim state)]}
+
+
+;;;;;;;;;;
+
+
+(defn state
+
+  [state n.nft-per-user n.user]
+
+  ($.sim.state/prepare
+    state
+    n.user
+    {:custom    (fn [config]
+                  (let [base.user (:base.user config)]
+                    (loop [i.user  0
+                           state-2 (:state config)]
+                      (if (< i.user
+                             n.user)
+                        (recur (inc i.user)
+                               (let [user (address (+ base.user
+                                                      i.user))]
+                                 (loop [i.nft   0
+                                        state-3 state-2]
+                                   (if (< i.nft
+                                          n.nft-per-user)
+                                     (recur (inc i.nft)
+                                            (second ($.sim.state/exec state-3
+                                                                      user
+                                                                      `(call nft
+                                                                             (create-token {:name ~(str "NFT " i.nft)}
+                                                                                           nil)))))
+                                     state-3))))
+                         (assoc config
+                                :n.nft-per-user n.nft-per-user
+                                :state          state-2)))))
+     :user.code '(do
+                   (import asset.nft.tokens :as nft)
+                   (import convex.asset :as asset))}))
+
+
+
+(defn gen.trx
+
+  [config]
+
+  (let [base.user    (:base.user config)
+        n.user       (:n.user config)
+        gen.receiver (.gen.fmap address
+                                (.gen.long.uniform base.user
+                                                   (dec (+ base.user
+                                                           n.user))))]
+    (fn [i.user]
+      (let [origin (address (+ base.user
+                               i.user))]
+        (fn [sequence]
+          (.gen.fmap (fn [receiver]
+                       (.trx.new.invoke origin
+                                        `(when-let [nft.id (first (asset/balance nft))]
+                                           (asset/transfer ~receiver
+                                                           [nft
+                                                            nft.id]))
+                                        {:sequence sequence}))
+                     gen.receiver))))))

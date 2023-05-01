@@ -81,12 +81,12 @@
 
   ([state code]
 
-    (exec nil
-          state
+    (exec state
+          nil
           code))
 
 
-  ([addr state code]
+  ([state addr code]
 
    (let [addr-2 (or addr
                     .account.genesis)
@@ -136,6 +136,7 @@
                                  (transfer user
                                            ~balance.initial)))))
          (let [config   {:base.user base.user
+                         :gen.seed  0
                          :n.user    n.user
                          :state     state-2}
                custom   (:custom option+)
@@ -147,4 +148,5 @@
                   (second (exec (:state config-2)
                                 `(def config
                                       ~(dissoc config-2
+                                               :gen.seed
                                                :state)))))))))))
