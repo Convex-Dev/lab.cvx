@@ -1,0 +1,100 @@
+{:deploy [$.sim.state (lib sim state)]}
+
+
+;;;;;;;;;;
+
+
+(defn state
+
+  [state n.dao n.user]
+
+  (when (> n.dao
+           n.user)
+    (fail :ARGUMENT
+          "Number of DAOs must be <= number of users"))
+  ($.sim.state/prepare
+    state
+    n.user
+    {:custom (fn [config]
+               (let [base.user (:base.user config)
+                     base.dao  (+ base.user
+                                  n.user)]
+                 (loop [i.dao    0
+                        state-2  (:state config)]
+                   (if (< i.dao
+                          n.dao)
+                     (recur (inc i.dao)
+                            (second ($.sim.state/exec
+                                      state-2
+                                      `(deploy
+                                         '(do
+                                            (import convex.trust :as trust)
+                                            (def whitelist
+                                                 (deploy (trust/build-whitelist
+                                                           {:whitelist ~(loop [acc    #{}
+                                                                               i.user i.dao]
+                                                                          (if (< i.user
+                                                                                 n.user)
+                                                                            (recur (conj acc
+                                                                                         (address (+ base.user
+                                                                                                     i.user)))
+                                                                                   (+ i.user
+                                                                                      n.dao))
+                                                                            acc))})))
+                                           (def counter
+                                                1)
+                                           (def voted
+                                                #{})
+                                           (defn vote
+                                             ^:callable?
+                                             [bool]
+                                             (when-not (trust/trusted? whitelist
+                                                                       *caller*)
+                                               (fail :TRUST
+                                                     "This should not happen"))
+                                             (def voted
+                                                  (if bool
+                                                    (conj voted
+                                                          *caller*)
+                                                    (disj voted
+                                                          *caller*)))
+                                             (if (= voted
+                                                    whitelist/whitelist)
+                                               (do
+                                                 (def voted
+                                                      #{})
+                                                 (def counter
+                                                      (inc counter)))
+                                               counter)))))))
+                     (assoc config
+                            :base.dao base.dao
+                            :n.dao    n.dao
+                            :state    state-2)))))}))
+
+
+
+(defn gen.trx
+
+  [config]
+
+  (let [base.dao  (:base.dao config)
+        base.user (:base.user config)
+        n.dao     (:n.dao config)
+        n.user    (:n.user config)
+        gen.bool  (.gen.freq [[90 (.gen.always true)]
+                              [10 (.gen.always false)]])]
+    (fn [i.user]
+      (let [origin (address (+ base.user
+                               i.user))
+            dao    (address (+ base.dao
+                               (* 2 ; each DAO also deployed a whitelist
+                                  (mod i.user
+                                       n.dao))))]
+        (fn [sequence]
+          (.gen.fmap (fn [bool]
+                       (.trx.new.call origin
+                                      dao
+                                      'vote
+                                      [bool]
+                                      {:sequence sequence}))
+                     gen.bool))))))

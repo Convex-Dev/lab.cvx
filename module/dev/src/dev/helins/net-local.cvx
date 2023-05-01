@@ -2,6 +2,7 @@
           $.net.local             (lib net local)
           $.peer                  (lib peer)
           $.sim.load              (lib sim load)
+          $.sim.scenario.dao      (lib sim scenario dao)
           $.sim.scenario.empty    (lib sim scenario empty)
           $.sim.scenario.nft      (lib sim scenario nft)
           $.sim.scenario.oracle   (lib sim scenario oracle)
@@ -79,7 +80,7 @@
   []
 
   (.db.open "/tmp/genesis.etch")
-  (let [config ($.sim.scenario.nft/state ($.net.local/state.genesis {:n.peer 3})
+  (let [config ($.sim.scenario.dao/state ($.net.local/state.genesis {:n.peer 3})
                                             20
                                             100)]
     (.db.root.write (:state config)))
@@ -119,7 +120,7 @@
 ;($.net.local/repl.client net #12)
 
 
-($.net.local/load $.sim.scenario.nft/gen.trx)
+($.net.local/load $.sim.scenario.dao/gen.trx)
 
 
                     
