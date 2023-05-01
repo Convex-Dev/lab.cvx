@@ -130,7 +130,12 @@
          (if (zero? code)
            (.log.info* (str "Peer " i.peer " stopped normally"))
            (.log.error* (str "Peer " i.peer " stopped with non-zero exit code: " code)))))
-    peer))
+    (let [[in
+           out] (.worker.pipe+ (str (:name config) "_" i.peer))]
+      (assoc peer
+             :pipe
+             {:in  (.file.stream.out in)
+              :out (.file.stream.in out)}))))
 
 
 
@@ -476,12 +481,13 @@
 
   ([net i.peer]
 
-   (.worker.repl {:pipe (str (:name net)
-                             "_" 
-                             (or i.peer
-                                 (.gen (.gen.long.uniform 0
-                                                          (dec (count (:peer+ net))))
-                                       {:seed (.time.unix)})))})))
+   (let [i.peer-2 (or i.peer
+                      (.gen (.gen.long.uniform 0
+                                               (dec (count (:peer+ net))))
+                            {:seed (.time.unix)}))]
+     (.worker.repl (:pipe (nth (:peer+ net)
+                               i.peer-2))
+                   {:name (str (:name net) "_" i.peer-2)}))))
 
 
 ;;;;;;;;;; Load

@@ -6,12 +6,12 @@
 
 (defn block.hash+
 
-  [peer+]
+  [net]
 
   (map (fn [peer]
          (let [[ok?
                 _key
-                result] (.worker.exec peer
+                result] (.worker.exec (:pipe peer)
                                       '(map (fn [block]
                                               (hash (encoding block)))
                                             (:blocks (.peer.order peer))))]
@@ -19,43 +19,44 @@
              (fail :FAIL
                    (str "Unable to retrieve block hashes for Peer " (:i peer))))
            result))
-       peer+))
+       (:peer+ net)))
 
 
 
 (defn consensus
 
-  [peer+]
+  [net]
 
-  (let [n (count peer+)]
-    (loop [acc []
-           i   0]
-      (if (< i
-             n)
+  (let [peer+  (:peer+ net)
+        n.peer (count peer+)]
+    (loop [acc    []
+           i.peer 0]
+      (if (< i.peer
+             n.peer)
         (recur (conj acc
                      (let [[ok?
                             _key
-                            status] (.worker.exec (nth peer+
-                                                       i)
+                            status] (.worker.exec (:pipe (nth peer+
+                                                              i.peer))
                                                   '(.peer.status peer))]
                        (when-not ok?
                          (fail :FAIL
-                               (str "Unable to retrieve status for Peer " i)))
+                               (str "Unable to retrieve status for Peer " i.peer)))
                        (assoc status
                               :i
-                              i)))
-               (inc i))
+                              i.peer)))
+               (inc i.peer))
         acc))))
 
 
 
 (defn consensus.matrix
 
-  [peer+]
+  [net]
 
-  (let [hash+      (block.hash+ peer+)
+  (let [hash+      (block.hash+ net)
         n.peer     (count hash+)
-        consensus- (consensus peer+)]
+        consensus- (consensus net)]
     (loop [acc    []
            i.peer 0]
       (if (< i.peer
@@ -104,16 +105,16 @@
 
 (defn convergence
 
-  [peer+]
+  [net]
 
-  (let [n          (count peer+)
-        consensus- (consensus peer+)]
-    (loop [acc {}
-           i   0]
-      (if (< i
-             n)
+  (let [n.peer     (count (:peer+ net))
+        consensus- (consensus net)]
+    (loop [acc    {}
+           i.peer 0]
+      (if (< i.peer
+             n.peer)
         (recur (let [status               (nth consensus-
-                                               i)
+                                               i.peer)
                      point.consensus      (:point.consensus status)
                      hash->i.peer+        (or (get acc
                                                    point.consensus)
@@ -126,15 +127,15 @@
                                (conj (or (get hash->i.peer+
                                               hash.state.consensus)
                                          [])
-                                     i))))
-               (inc i))
+                                     i.peer))))
+               (inc i.peer))
         acc))))
 
 
 
 (defn convergence.fake
 
-  [peer+]
+  [net]
 
   (reduce (fn [acc [cp hash.state.consensus->i.peer+]]
             (reduce (fn [acc-2 [hash.state.consensus i.peer+]]
@@ -145,7 +146,7 @@
                           (let [i.peer    (first i.peer-2+)
                                 i.peer-3+ (next i.peer-2+)]
                             (recur (reduce (fn [acc-4 i.peer-2]
-                                             (if-let [d (divergence peer+
+                                             (if-let [d (divergence net
                                                                     i.peer
                                                                     i.peer-2)]
                                                (conj acc-4
@@ -158,20 +159,20 @@
                     acc
                     hash.state.consensus->i.peer+))
           []
-          (convergence peer+)))
+          (convergence net)))
 
 
 
 (defn divergence
 
-  [peer+ i.peer-1 i.peer-2]
+  [net i.peer-1 i.peer-2]
 
-  (let [consensus- (consensus peer+)
+  (let [consensus- (consensus net)
         cp         (min (:point.consensus (nth consensus-
                                                i.peer-1))
                         (:point.consensus (nth consensus-
                                                i.peer-2)))
-        block+     (block.hash+ peer+)
+        block+     (block.hash+ net)
         block-1+   (nth block+
                         i.peer-1)
         block-2+   (nth block+

@@ -20,7 +20,7 @@
          (.stream.txt.out "Consensus state hash: ")
          (.stream.outln (:hash.state.consensus status))
          (.stream.txt.outln ""))
-       ($.net.local.diagnostic.impl/consensus (:peer+ net)))
+       ($.net.local.diagnostic.impl/consensus net))
   nil)
 
 
@@ -30,7 +30,7 @@
   [net]
 
   (map .stream.outln
-       ($.net.local.diagnostic.impl/consensus.matrix (:peer+ net)))
+       ($.net.local.diagnostic.impl/consensus.matrix net))
   nil)
 
 
@@ -45,7 +45,7 @@
                 (.stream.txt.outln (str "Consensus state = " hash.state.consensus " <- " i.peer+)))
               hash.state.consensus->i.peer+)
          (.stream.txt.outln ""))
-       ($.net.local.diagnostic.impl/convergence (:peer+ net)))
+       ($.net.local.diagnostic.impl/convergence net))
   nil)
 
 
@@ -54,7 +54,7 @@
 
   [net]
 
-  (let [pair+ ($.net.local.diagnostic.impl/convergence.fake (:peer+ net))]
+  (let [pair+ ($.net.local.diagnostic.impl/convergence.fake net)]
     (if (empty? pair+)
       (.stream.txt.outln "All peers with the same consensus point are fully aligned")
       (do
@@ -75,7 +75,7 @@
               n.diff
               n.aligned
               last-block-1+
-              last-block-2+] ($.net.local.diagnostic.impl/divergence (:peer+ net)
+              last-block-2+] ($.net.local.diagnostic.impl/divergence net
                                                                      i.peer-1
                                                                      i.peer-2)]
          (.stream.txt.outln "")

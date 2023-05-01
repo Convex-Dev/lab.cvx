@@ -90,7 +90,7 @@
   nil)
 
 
-(def net
+#_(def net
      ($.net.local/start "net"
                         {:log.level :debug
                             ;:cmd                 '[jcvx]
@@ -123,7 +123,7 @@
 ;($.net.local/repl.client net #12)
 
 
-($.net.local/load $.sim.scenario.schedule/gen.trx)
+#_($.net.local/load $.sim.scenario.schedule/gen.trx)
 
 
                     
