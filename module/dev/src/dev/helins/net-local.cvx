@@ -6,7 +6,7 @@
           $.sim.scenario.oracle   (lib sim scenario oracle)
           $.sim.scenario.fungible (lib sim scenario fungible)
           $.sim.scenario.transfer (lib sim scenario transfer)
-          $.state                 (lib state)
+          $.sim.state             (lib sim state)
           dia                     (lib net local diagnostic)]}
 
 
@@ -131,7 +131,6 @@
 ;(.state.switch ($.net.local/state.genesis {:n.peer 3}))
 ;(count (:accounts *state*))
 
-;(count (:accounts (:state ($.state/account+ ($.net.local/state.genesis {:n.peer 3}) 10000))))
 ;(.state.switch .account.genesis ($.net.local/state.genesis {:n.peer 3}))
 
 

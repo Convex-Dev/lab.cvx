@@ -1,4 +1,4 @@
-{:deploy [$.state (lib state)]}
+{:deploy [$.sim.state (lib sim state)]}
 
 
 ;;;;;;;;;;
@@ -8,9 +8,9 @@
 
   [state n.user]
 
-  ($.state/user+ state
-                 n.user
-                 nil))
+  ($.sim.state/user+ state
+                     n.user
+                     nil))
 
 
 
