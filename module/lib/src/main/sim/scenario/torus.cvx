@@ -11,7 +11,8 @@
   ($.sim.state/prepare
     state
     n.user
-    {:custom    (fn [config]
+    {:code.user '(import torus.exchange :as torus)
+     :custom    (fn [config]
                   (let [base.user        (:base.user config)
                         base.token       (+ base.user
                                             n.user)
@@ -56,8 +57,7 @@
                         (assoc config
                                :base.token base.token
                                :n.token    n.token
-                               :state      state-2)))))
-     :user.code '(import torus.exchange :as torus)}))
+                               :state      state-2)))))}))
 
 
 

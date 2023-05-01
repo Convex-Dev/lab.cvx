@@ -11,7 +11,10 @@
   ($.sim.state/prepare
     state
     n.user
-    {:custom    (fn [config]
+    {:code.user '(do
+                   (import asset.nft.tokens :as nft)
+                   (import convex.asset :as asset))
+     :custom    (fn [config]
                   (let [base.user (:base.user config)]
                     (loop [i.user  0
                            state-2 (:state config)]
@@ -33,10 +36,7 @@
                                      state-3))))
                          (assoc config
                                 :n.nft-per-user n.nft-per-user
-                                :state          state-2)))))
-     :user.code '(do
-                   (import asset.nft.tokens :as nft)
-                   (import convex.asset :as asset))}))
+                                :state          state-2)))))}))
 
 
 

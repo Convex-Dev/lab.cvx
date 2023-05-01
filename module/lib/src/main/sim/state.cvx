@@ -122,7 +122,7 @@
                                            (long .account.genesis)
                                            :balance])
                                   n.user))
-         code.user       (:user.code option+)]
+         code.user       (:code.user option+)]
      (loop [i.user   0
             state-2  state]
        (if (< i.user

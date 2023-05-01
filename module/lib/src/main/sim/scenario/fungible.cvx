@@ -11,7 +11,8 @@
   ($.sim.state/prepare
     state
     n.user
-    {:custom    (fn [config]
+    {:code.user '(import convex.asset :as asset)
+     :custom    (fn [config]
                   (let [base.user        (:base.user config)
                         base.token       (+ base.user
                                             n.user)
@@ -43,8 +44,7 @@
                         (assoc config
                                :base.token base.token
                                :n.token    n.token
-                               :state      state-2)))))
-     :user.code '(import convex.asset :as asset)}))
+                               :state      state-2)))))}))
 
 
 
@@ -52,27 +52,27 @@
 
   [config]
 
-  (let [base.token (:base.token config)
-        base.user  (:base.user config)
-        n.token    (:n.token config)
-        n.user     (:n.user config)
-        gen.token  (.gen.fmap address
-                              (.gen.long.uniform base.token
-                                                 (dec (+ base.token
-                                                         n.token))))
-        gen.target (.gen.fmap address
-                              (.gen.long.uniform base.user
-                                                 (dec (+ base.user
-                                                         n.user))))
-        gen.param+ (.gen.tuple [gen.target
-                                gen.token])]
+  (let [base.token   (:base.token config)
+        base.user    (:base.user config)
+        n.token      (:n.token config)
+        n.user       (:n.user config)
+        gen.token    (.gen.fmap address
+                                (.gen.long.uniform base.token
+                                                   (dec (+ base.token
+                                                           n.token))))
+        gen.receiver (.gen.fmap address
+                                (.gen.long.uniform base.user
+                                                   (dec (+ base.user
+                                                           n.user))))
+        gen.param+   (.gen.tuple [gen.receiver
+                                  gen.token])]
     (fn [i.user]
       (let [origin (address (+ base.user
                                i.user))]
         (fn [sequence]
-          (.gen.fmap (fn [[target token]]
+          (.gen.fmap (fn [[receiver token]]
                        (.trx.new.invoke origin
-                                        `(asset/transfer ~target
+                                        `(asset/transfer ~receiver
                                                          [~token
                                                           1])
                                         {:sequence sequence}))

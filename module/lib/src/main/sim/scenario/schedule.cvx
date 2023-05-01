@@ -1,0 +1,34 @@
+{:deploy [$.sim.state (lib sim state)]}
+
+
+;;;;;;;;;;
+
+
+(defn state
+
+  [state n.user]
+
+  ($.sim.state/prepare state
+                       n.user
+                       {:code.user '(def x
+                                         0)}))
+ 
+
+
+(defn gen.trx
+
+  [config]
+
+  (let [base.user (:base.user config)
+        n.user    (:n.user config)
+        code      '[x
+                    (schedule 0
+                              (def x
+                                   (inc x)))]]
+    (fn [i.user]
+      (let [origin (address (+ base.user
+                               i.user))]
+        (fn [sequence]
+          (.gen.always (.trx.new.invoke origin
+                                        code
+                                        {:sequence sequence})))))))

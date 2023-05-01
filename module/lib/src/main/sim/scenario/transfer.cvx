@@ -17,19 +17,19 @@
 
   [config]
 
-  (let [base.user  (:base.user config)
-        n.user     (:n.user config)
-        gen.target (.gen.fmap address
-                              (.gen.long.uniform base.user
-                                                 (dec (+ base.user
-                                                         n.user))))]
+  (let [base.user   (:base.user config)
+        n.user      (:n.user config)
+        gen.receiver (.gen.fmap address
+                                (.gen.long.uniform base.user
+                                                   (dec (+ base.user
+                                                           n.user))))]
     (fn [i.user]
       (let [origin (address (+ base.user
                                i.user))]
         (fn [sequence]
-          (.gen.fmap (fn [target]
+          (.gen.fmap (fn [receiver]
                        (.trx.new.transfer origin
-                                          target
+                                          receiver
                                           1
                                           {:sequence sequence}))
-                     gen.target))))))
+                     gen.receiver))))))
