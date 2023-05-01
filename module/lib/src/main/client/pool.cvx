@@ -23,8 +23,6 @@
    (when (empty? url+)
      (fail :ARGUMENT
            "Must provide at least 1 end point"))
-   (when-not (.db.path)
-     (.db.open (.fs.tmp)))
    (let [n.url      (count url+)
          n.client-2 (or n.client
                         n.url)]

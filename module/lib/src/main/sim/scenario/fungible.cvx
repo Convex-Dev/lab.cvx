@@ -8,41 +8,43 @@
 
   [state n.token n.user]
 
-  (let [config           ($.sim.state/user+ state
-                                            n.user
-                                            nil)
-        base.user        (:base.user config)
-        base.token       (+ base.user
-                            n.user)
-        n.token-per-user 1000000000
-        supply           (* n.token-per-user
-                            n.user)]
-    (loop [i.token 0
-           state-2 (second ($.sim.state/exec (:state config)
-                                             '(do
-                                                (import convex.asset :as asset)
-                                                (import convex.fungible :as fun))))]
-      (if (< i.token
-             n.token)
-        (recur (inc i.token)
-               (let [token (address (+ base.token
-                                       i.token))]
-                 (loop [i.user  0
-                        state-3 (second ($.sim.state/exec state-2
-                                                          `(deploy (fun/build-token {:supply ~supply}))))]
-                   (if (< i.user
-                          n.user)
-                     (recur (inc i.user)
-                            (second ($.sim.state/exec state-3
-                                                      `(asset/transfer ~(address (+ base.user
-                                                                                    i.user))
-                                                                       [~token
-                                                                        ~n.token-per-user]))))
-                     state-3))))
-        (assoc config
-               :base.token base.token
-               :n.token    n.token
-               :state      state-2)))))
+  ($.sim.state/prepare
+    state
+    n.user
+    {:custom    (fn [config]
+                  (let [base.user        (:base.user config)
+                        base.token       (+ base.user
+                                            n.user)
+                        n.token-per-user 1000000000
+                        supply           (* n.token-per-user
+                                            n.user)]
+                    (loop [i.token 0
+                           state-2 (second ($.sim.state/exec (:state config)
+                                                             '(do
+                                                                (import convex.asset :as asset)
+                                                                (import convex.fungible :as fun))))]
+                      (if (< i.token
+                             n.token)
+                        (recur (inc i.token)
+                               (let [token (address (+ base.token
+                                                       i.token))]
+                                 (loop [i.user  0
+                                        state-3 (second ($.sim.state/exec state-2
+                                                                          `(deploy (fun/build-token {:supply ~supply}))))]
+                                   (if (< i.user
+                                          n.user)
+                                     (recur (inc i.user)
+                                            (second ($.sim.state/exec state-3
+                                                                      `(asset/transfer ~(address (+ base.user
+                                                                                                    i.user))
+                                                                                       [~token
+                                                                                        ~n.token-per-user]))))
+                                     state-3))))
+                        (assoc config
+                               :base.token base.token
+                               :n.token    n.token
+                               :state      state-2)))))
+     :user.code '(import convex.asset :as asset)}))
 
 
 

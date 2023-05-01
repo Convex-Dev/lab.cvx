@@ -8,9 +8,8 @@
 
   [state n.user]
 
-  ($.sim.state/user+ state
-                     n.user
-                     nil))
+  ($.sim.state/prepare state
+                       n.user))
 
 
 

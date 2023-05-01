@@ -489,9 +489,14 @@
 
 (defn load
 
-  [net gen.trx config]
 
-  ($.sim.load/start gen.trx
-                    (assoc config
-                           :port
-                           (:port.genesis net))))
+  ([gen.trx]
+
+   (load nil
+         gen.trx))
+
+
+  ([net gen.trx]
+
+   ($.sim.load/start gen.trx
+                     {:port (:port.genesis net)})))

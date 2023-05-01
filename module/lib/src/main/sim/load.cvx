@@ -7,47 +7,61 @@
 
 (defn start
 
-  [gen.trx config]
 
-  (let [gen.trx-2 (gen.trx config)
-        base.user (:base.user config)
-        n.user    (:n.user config)
-        client+   ($.client.pool/connect n.user
-                                         ($.net/url+ config))]
-    (loop [acc    []
-           i.user 0]
-      (if (< i.user
-             n.user)
-        (recur (conj acc
-                     (.a.do*
-                       (let [[ok?
-                              x]  (.state.safe*
-                                    (let [addr.long (+ base.user
-                                                       i.user)
-                                          addr      (address addr.long)
-                                          client    (nth client+
-                                                         (mod i.user
-                                                              n.user))
-                                          kp        (.kp.create (.kp.seed.dev addr.long))
-                                          gen.trx-3 (gen.trx-2 i.user)]
-                                      (loop [sequence 1]
-                                        (let [trx      (.kp.sign kp
-                                                                 (.gen (gen.trx-3 sequence)))
-                                              ;; TODO. Add timeout.
-                                              [rtt
-                                               result] (.time.do*
-                                                         (.a.take (.client.transact client
-                                                                                    trx)))]
-                                          (.log.report* [addr (/ rtt 1e6) result])
-                                          ;(.time.sleep (.gen (.gen.long.uniform 0
-                                          ;                                      50)))
-                                          (recur
-                                            (if (= (:error result)
-                                                   :SEQUENCE)
-                                              (.a.take (.client.sequence client
-                                                                         addr))
-                                          (inc sequence)))))))]
-                         (when-not ok?
-                           (.log.error* [:client x])))))
-               (inc i.user))
-        acc))))
+  ([gen.trx]
+
+   (start gen.trx
+          nil))
+
+
+  ([gen.trx option+]
+
+   (when-not (.db.path)
+     (.db.open (.fs.tmp)))
+   (let [config    (.try.resrc* [client (.client.connect option+)
+                                        (.client.close client)]
+                     (:result (.a.take (.client.query client
+                                                      .account.genesis
+                                                      'config))))
+         gen.trx-2 (gen.trx config)
+         base.user (:base.user config)
+         n.user    (:n.user config)
+         client+   ($.client.pool/connect n.user
+                                          ($.net/url+ option+))]
+     (loop [acc    []
+            i.user 0]
+       (if (< i.user
+              n.user)
+         (recur (conj acc
+                      (.a.do*
+                        (let [[ok?
+                               x]  (.state.safe*
+                                     (let [addr.long (+ base.user
+                                                        i.user)
+                                           addr      (address addr.long)
+                                           client    (nth client+
+                                                          (mod i.user
+                                                               n.user))
+                                           kp        (.kp.create (.kp.seed.dev addr.long))
+                                           gen.trx-3 (gen.trx-2 i.user)]
+                                       (loop [sequence 1]
+                                         (let [trx      (.kp.sign kp
+                                                                  (.gen (gen.trx-3 sequence)))
+                                               ;; TODO. Add timeout.
+                                               [rtt
+                                                result] (.time.do*
+                                                          (.a.take (.client.transact client
+                                                                                     trx)))]
+                                           (.log.report* [addr (/ rtt 1e6) result])
+                                           ;(.time.sleep (.gen (.gen.long.uniform 0
+                                           ;                                      50)))
+                                           (recur
+                                             (if (= (:error result)
+                                                    :SEQUENCE)
+                                               (.a.take (.client.sequence client
+                                                                          addr))
+                                           (inc sequence)))))))]
+                          (when-not ok?
+                            (.log.error* [:client x])))))
+                (inc i.user))
+         acc)))))

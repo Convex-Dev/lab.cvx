@@ -104,28 +104,47 @@
 
 
 
-(defn user+
+(defn prepare
 
-  [state n.user code]
 
-  (let [base.user       (count (:accounts state))
-        balance.initial (long (/ (get-in state
-                                         [:accounts
-                                          (long .account.genesis)
-                                          :balance])
-                                 n.user))]
-    (loop [i.user   0
-           state-2  state]
-      (if (< i.user
-             n.user)
-        (recur (inc i.user)
-               (second (exec state-2
-                             `(let [user (deploy '(do
-                                                    (set-key ~(.kp.pubkey (.kp.create (.kp.seed.dev (+ base.user
-                                                                                                       i.user)))))
-                                                    ~code))]
-                                (transfer user
-                                          ~balance.initial)))))
-        {:base.user base.user
-         :n.user    n.user
-         :state     state-2}))))
+  ([state n.user]
+
+    (prepare state
+             n.user
+             nil))
+
+
+  ([state n.user option+]
+
+   (let [base.user       (count (:accounts state))
+         balance.initial (long (/ (get-in state
+                                          [:accounts
+                                           (long .account.genesis)
+                                           :balance])
+                                  n.user))
+         code.user       (:user.code option+)]
+     (loop [i.user   0
+            state-2  state]
+       (if (< i.user
+              n.user)
+         (recur (inc i.user)
+                (second (exec state-2
+                              `(let [user (deploy '(do
+                                                     (set-key ~(.kp.pubkey (.kp.create (.kp.seed.dev (+ base.user
+                                                                                                        i.user)))))
+                                                     ~code.user))]
+                                 (transfer user
+                                           ~balance.initial)))))
+         (let [config   {:base.user base.user
+                         :n.user    n.user
+                         :state     state-2}
+               custom   (:custom option+)
+               config-2 (if custom
+                          (custom config)
+                          config)]
+           (assoc config-2
+                  :state
+                  (second (exec (:state config-2)
+                                `(def config
+                                      ~(dissoc config-2
+                                               :state)))))))))))

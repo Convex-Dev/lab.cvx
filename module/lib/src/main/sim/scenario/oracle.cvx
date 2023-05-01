@@ -12,50 +12,51 @@
            n.user)
     (fail :ARGUMENT
           "Number of oracle must be <= number of users"))
-  (let [config           ($.sim.state/user+ state
-                                            n.user
-                                            nil)
-        base.user        (:base.user config)
-        base.oracle      (+ base.user
-                            n.user)]
-    (loop [i.oracle 0
-           state-2  (:state config)]
-      (if (< i.oracle
-             n.oracle)
-        (recur (inc i.oracle)
-               (second ($.sim.state/exec state-2
-                                         `(deploy
-                                            '(do
-                                               (import convex.trust :as trust)
-                                               (def whitelist
-                                                    (deploy (trust/build-whitelist
-                                                              {:whitelist ~(loop [acc    #{}
-                                                                                  i.user i.oracle]
-                                                                             (if (< i.user
-                                                                                    n.user)
-                                                                               (recur (conj acc
-                                                                                            (address (+ base.user
-                                                                                                        i.user)))
-                                                                                      (+ i.user
-                                                                                         n.oracle))
-                                                                               acc))})))
-                                              (def log
-                                                   [])
-                                              (defn add
-                                                ^:callable?
-                                                [x]
-                                                (when-not (trust/trusted? whitelist
-                                                                          *caller*)
-                                                  (fail :TRUST
-                                                        "This should not happen"))
-                                                (def log
-                                                     (conj log
-                                                           x))
-                                                (count log)))))))
-        (assoc config
-               :base.oracle base.oracle
-               :n.oracle    n.oracle
-               :state       state-2)))))
+  ($.sim.state/prepare
+    state
+    n.user
+    {:custom (fn [config]
+               (let [base.user   (:base.user config)
+                     base.oracle (+ base.user
+                                    n.user)]
+                 (loop [i.oracle 0
+                        state-2  (:state config)]
+                   (if (< i.oracle
+                          n.oracle)
+                     (recur (inc i.oracle)
+                            (second ($.sim.state/exec state-2
+                                                      `(deploy
+                                                         '(do
+                                                            (import convex.trust :as trust)
+                                                            (def whitelist
+                                                                 (deploy (trust/build-whitelist
+                                                                           {:whitelist ~(loop [acc    #{}
+                                                                                               i.user i.oracle]
+                                                                                          (if (< i.user
+                                                                                                 n.user)
+                                                                                            (recur (conj acc
+                                                                                                         (address (+ base.user
+                                                                                                                     i.user)))
+                                                                                                   (+ i.user
+                                                                                                      n.oracle))
+                                                                                            acc))})))
+                                                           (def log
+                                                                [])
+                                                           (defn add
+                                                             ^:callable?
+                                                             [x]
+                                                             (when-not (trust/trusted? whitelist
+                                                                                       *caller*)
+                                                               (fail :TRUST
+                                                                     "This should not happen"))
+                                                             (def log
+                                                                  (conj log
+                                                                        x))
+                                                             (count log)))))))
+                     (assoc config
+                            :base.oracle base.oracle
+                            :n.oracle    n.oracle
+                            :state       state-2)))))}))
 
 
 

@@ -77,13 +77,10 @@
   []
 
   (.db.open "/tmp/genesis.etch")
-  (let [param+ ($.sim.scenario.oracle/state ($.net.local/state.genesis {:n.peer 3})
-                                              10
-                                              100)]
-    (.db.root.write (:state param+))
-    (.file.write "/tmp/genesis.cvx"
-                 (dissoc param+
-                         :state)))
+  (let [config ($.sim.scenario.oracle/state ($.net.local/state.genesis {:n.peer 3})
+                                            10
+                                            100)]
+    (.db.root.write (:state config)))
   nil)
 
 
@@ -120,10 +117,7 @@
 ;($.net.local/repl.client net #12)
 
 
-(let [config (first (.file.read "/tmp/genesis.cvx"))]
-  ($.net.local/load net
-                    $.sim.scenario.oracle/gen.trx
-                    config))
+($.net.local/load $.sim.scenario.oracle/gen.trx)
 
 
                     
