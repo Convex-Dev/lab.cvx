@@ -1,0 +1,96 @@
+{:deploy [$.sim.state (lib sim state)]}
+
+
+;;;;;;;;;;
+
+
+(defn state
+
+  [state n.token n.user]
+
+  ($.sim.state/prepare
+    state
+    n.user
+    {:custom    (fn [config]
+                  (let [base.user        (:base.user config)
+                        base.token       (+ base.user
+                                            n.user)
+                        n.token-per-user 1000000000
+                        supply           (* 2 ; half will be used to provide liquidiy in the market
+                                            n.token-per-user
+                                            n.user)
+                        liquidity        (long (/ supply
+                                                  2))]
+                    (loop [i.token 0
+                           state-2 (second ($.sim.state/exec (:state config)
+                                                             #2
+                                                             '(do
+                                                                (import convex.asset :as asset)
+                                                                (import convex.fungible :as fun)
+                                                                (import torus.exchange :as torus))))]
+                      (if (< i.token
+                             n.token)
+                        (recur (inc i.token)
+                               (let [token (address (+ base.token
+                                                       (* 2 ; each token also creates a market for it
+                                                          i.token)))]
+                                 (loop [i.user  0
+                                        state-3 (second ($.sim.state/exec
+                                                          state-2
+                                                          #2
+                                                          `(let [token (deploy (fun/build-token {:supply ~supply}))]
+                                                             (torus/add-liquidity token
+                                                                                  ~liquidity
+                                                                                  ~(* (inc i.token)
+                                                                                      liquidity)))))]
+                                   (if (< i.user
+                                          n.user)
+                                     (recur (inc i.user)
+                                            (second ($.sim.state/exec state-3
+                                                                      #2
+                                                                      `(asset/transfer ~(address (+ base.user
+                                                                                                    i.user))
+                                                                                       [~token
+                                                                                        ~n.token-per-user]))))
+                                     state-3))))
+                        (assoc config
+                               :base.token base.token
+                               :n.token    n.token
+                               :state      state-2)))))
+     :user.code '(import torus.exchange :as torus)}))
+
+
+
+(defn gen.trx
+
+  [config]
+
+  (let [base.token (:base.token config)
+        base.user  (:base.user config)
+        n.token    (:n.token config)
+        n.user     (:n.user config)
+        gen.amount (.gen.long.uniform 1
+                                      10)
+        gen.op     (.gen.pick ['torus/buy
+                               'torus/sell])
+        gen.token  (.gen.fmap (fn [i.token]
+                                (address (+ base.token
+                                            (* 2
+                                               i.token)))) ; each token also deploys a market
+                              (.gen.long.uniform 0
+                                                 (dec n.token)))
+        gen.param+ (.gen.tuple [gen.op
+                                gen.token
+                                gen.amount
+                                gen.token])]
+    (fn [i.user]
+      (let [origin (address (+ base.user
+                               i.user))]
+        (fn [sequence]
+          (.gen.fmap (fn [[op token.of amount token.with]]
+                       (.trx.new.invoke origin
+                                        `(~op ~token.of
+                                              ~amount
+                                              ~token.with)
+                                        {:sequence sequence}))
+                     gen.param+))))))
