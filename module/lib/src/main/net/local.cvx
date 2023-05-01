@@ -487,20 +487,11 @@
 ;;;;;;;;;; Load
 
 
-(defn client.pool
-
-  [net n.user]
-
-  ($.client.pool/connect.range n.user
-                               (count (:peer+ net))))
-
-
-
 (defn load
 
   [net gen.trx config]
 
   ($.sim.load/start gen.trx
-                    (client.pool net
-                                 (:n.user config))
-                    config))
+                    (assoc config
+                           :port
+                           (:port.genesis net))))

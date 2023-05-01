@@ -1,71 +1,43 @@
 {}
 
+
 ;;;;;;;;;;
 
 
 (defn connect
 
 
-  ([end-point+]
+  ([url+]
 
-   (start nil
-          end-point+))
+   (connect nil
+            url+))
 
 
-  ([n.client end-point+]
+  ([n.client url+]
 
    (when (and n.client
               (< n.client
                  1))
      (fail :ARGUMENT
            "Must start at least 1 client"))
-   (when (empty? end-point+)
+   (when (empty? url+)
      (fail :ARGUMENT
            "Must provide at least 1 end point"))
    (when-not (.db.path)
      (.db.open (.fs.tmp)))
-   (let [n.end-point (count end-point+)
-         n.client-2  (or n.client
-                         n.end-point)]
+   (let [n.url      (count url+)
+         n.client-2 (or n.client
+                        n.url)]
      (loop [acc []
             i   0]
        (if (< i
               n.client-2)
          (recur (conj acc
-                      (.client.connect (nth end-point+
+                      (.client.connect (nth url+
                                             (mod i
-                                                 n.end-point))))
+                                                 n.url))))
                 (inc i))
          acc)))))
-
-
-
-(defn connect.range
-
-
-  ([n.client n.peer]
-
-   (connect.range n.client
-                  n.peer
-                  nil))
-
-
-  ([n.client n.peer option+]
-
-   (let [base.port (or (:base.port option+)
-                       .peer.default.port)
-         host      (:host option+)]
-     (connect n.client
-              (loop [acc    []
-                     i.peer 0]
-                (if (< i.peer
-                       n.peer)
-                  (recur (conj acc
-                               {:host host
-                                :port (+ base.port
-                                         i.peer)})
-                         (inc i.peer))
-                  acc))))))
 
 
 

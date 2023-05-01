@@ -1,4 +1,5 @@
-{:deploy [$.net.local             (lib net local)
+{:deploy [$.client.pool           (lib client pool)
+          $.net.local             (lib net local)
           $.peer                  (lib peer)
           $.sim.load              (lib sim load)
           $.sim.scenario.empty    (lib sim scenario empty)
@@ -123,6 +124,8 @@
   ($.net.local/load net
                     $.sim.scenario.oracle/gen.trx
                     config))
+
+
                     
 
 ;(.state.switch ($.net.local/state.genesis {:n.peer 3}))
