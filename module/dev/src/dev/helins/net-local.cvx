@@ -84,8 +84,9 @@
   []
 
   (.db.open "/tmp/genesis.etch")
-  (let [config ($.sim.scenario.schedule/state ($.net.local/state.genesis {:n.peer 3})
-                                            100)]
+  (let [config ($.sim.scenario.torus/state ($.net.local/state.genesis {:n.peer 3})
+                                           5
+                                           100)]
     (.db.root.write (:state config)))
   nil)
 
@@ -95,7 +96,7 @@
                         {:log.level :debug
                             ;:cmd                 '[jcvx]
                          :dir                 "/tmp/net"
-                         :etch.origin.syncer? false
+                         ;:etch.origin.syncer? false
                          ;:n.max.sibling       9
                          :state               "/tmp/genesis.etch"
                          ;:state               ($.net.local/etch "/tmp/genesis.etch"
@@ -123,7 +124,7 @@
 ;($.net.local/repl.client net #12)
 
 
-;($.net.local/load $.sim.scenario.schedule/gen.trx)
+($.net.local/load $.sim.scenario.torus/gen.trx)
 
 
                     

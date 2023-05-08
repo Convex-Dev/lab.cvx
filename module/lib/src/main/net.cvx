@@ -21,47 +21,47 @@
                         (.client.close client)]
      (let [response (.a.take (.client.query client
                                             .account.genesis
-                                            '(map (fn [[_pubkey peer]]
-                                                    (:url (:metadata peer)))
-                                                  (:peers *state*)))
+                                            '(mapv (fn [peer]
+                                                     (:url (:metadata peer)))
+                                                   (values (:peers *state*))))
                            10000
                            :timeout)]
        (when (= response
                 :timeout)
          (fail :SHELL.CLIENT
                "Timeout while retrieving peer URLs"))
-       (map (fn [url]
-              (if (nil? url)
-                {:host "localhost"
-                 :port .peer.default.port}
-                (let [x (split url
-                               \:)
-                      n (count x)
-                      [host
-                       port] (cond
-                               ;;
-                               (= n
-                                  1)
-                               [(first x)
-                                nil]
-                               ;;
-                               (= n
-                                  2)
-                               [(first x)
-                                (let [port (second x)]
-                                  (if (empty? port)
-                                    nil
-                                    (let [port-2 (first (.reader.form+ port))]
-                                      (if (long? port-2)
-                                        port-2
-                                        (fail :STATE
-                                              "Peer port is not a number")))))]
-                               ;;
-                               (fail :STATE
-                                     "Peer URL not standard"))]
-                  {:host (if (empty? host)
-                           "localhost"
-                           host)
-                   :port (or port
-                             .peer.default.port)})))
-            (:result response))))))
+       (mapv (fn [url]
+               (if (nil? url)
+                 {:host "localhost"
+                  :port .peer.default.port}
+                 (let [x (split url
+                                \:)
+                       n (count x)
+                       [host
+                        port] (cond
+                                ;;
+                                (= n
+                                   1)
+                                [(first x)
+                                 nil]
+                                ;;
+                                (= n
+                                   2)
+                                [(first x)
+                                 (let [port (second x)]
+                                   (if (empty? port)
+                                     nil
+                                     (let [port-2 (first (.reader.form+ port))]
+                                       (if (long? port-2)
+                                         port-2
+                                         (fail :STATE
+                                               "Peer port is not a number")))))]
+                                ;;
+                                (fail :STATE
+                                      "Peer URL not standard"))]
+                   {:host (if (empty? host)
+                            "localhost"
+                            host)
+                    :port (or port
+                              .peer.default.port)})))
+             (:result response))))))
