@@ -154,6 +154,12 @@
                    
 
 
-;($.sim.load/start $.sim.scenario.torus/gen.trx)
+;($.sim.load/start $.sim.scenario.torus/gen.trx {:host "3.122.228.229"})
 
-($.net.test/client.repl 0 "localhost")
+;($.net.test/client.repl 0 "3.122.228.229")
+
+
+;($.net.test.dia.impl/block.hash+ "/Users/adam/Code/convex/clj/tool/private/aws")
+
+(def net
+     ($.net.test/as-fake-local {:dir "/Users/adam/Code/convex/clj/tool/private/aws"}))

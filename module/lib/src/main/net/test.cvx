@@ -122,3 +122,48 @@
                                                                  i.peer)))}))
                 (inc i.peer))
          (.state.genesis {:peer+ acc}))))))
+
+
+;;;;;;;;;; For diagnostics
+
+
+(defn as-fake-local
+
+  ;; Allows emulating a local network by pointing to a root directory gathering peer files from a test net.
+  ;; Useful for reusing all the diagnostic tools for local networks.
+
+
+  ([]
+
+   (as-fake-local nil))
+
+
+  ([option+]
+
+   (let [dir  (or (:dir option+)
+                  "./")
+         name (or (:name option+)
+                  "fake-net")]
+     (loop [i.peer 0
+            peer+  []]
+       (let [dir.peer (str dir "/" i.peer)]
+         (if (.fs.exists? dir.peer)
+           (let [etch.copy (.fs.tmp)
+                 pipe      (str name "_" i.peer)]
+             (.fs.copy (str dir.peer "/store.etch")
+                       etch.copy)
+             (recur (inc i.peer)
+                    (conj peer+
+                          (assoc (.process.run `[cvx
+                                                 (.db.open ~etch.copy)
+                                                 (def peer
+                                                      (.peer.init (.kp.create ~(.kp.seed.dev (+ 12
+                                                                                                i.peer)))
+                                                                  ~(first (.file.read (str dir.peer "/config.cvx")))))
+                                                 (.worker.start {:pipe ~pipe})])
+                                 :pipe
+                                 (let [[in
+                                        out] (.worker.pipe+ pipe)]
+                                   {:in  (.file.stream.out in)
+                                    :out (.file.stream.in out)})))))
+           {:peer+ peer+}))))))

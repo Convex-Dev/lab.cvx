@@ -8,19 +8,19 @@
 
   [net]
 
-  (map (fn [status]
-         (.stream.txt.out "Peer ")
-         (.stream.outln (:i status))
-         (.stream.txt.out "Proposal point: ")
-         (.stream.outln (:point.proposal status))
-         (.stream.txt.out "Consensus point: ")
-         (.stream.outln (:point.consensus status))
-         (.stream.txt.out "N blocks: ")
-         (.stream.outln (:n.block status))
-         (.stream.txt.out "Consensus state hash: ")
-         (.stream.outln (:hash.state.consensus status))
-         (.stream.txt.outln ""))
-       ($.net.local.diagnostic.impl/consensus net))
+  (.docoll (fn [status]
+             (.stream.txt.out "Peer ")
+             (.stream.outln (:i status))
+             (.stream.txt.out "Proposal point: ")
+             (.stream.outln (:point.proposal status))
+             (.stream.txt.out "Consensus point: ")
+             (.stream.outln (:point.consensus status))
+             (.stream.txt.out "N blocks: ")
+             (.stream.outln (:n.block status))
+             (.stream.txt.out "Consensus state hash: ")
+             (.stream.outln (:hash.state.consensus status))
+             (.stream.txt.outln ""))
+           ($.net.local.diagnostic.impl/consensus net))
   nil)
 
 
@@ -29,8 +29,8 @@
 
   [net]
 
-  (map .stream.outln
-       ($.net.local.diagnostic.impl/consensus.matrix net))
+  (.docoll .stream.outln
+           ($.net.local.diagnostic.impl/consensus.matrix net))
   nil)
 
 
@@ -39,13 +39,13 @@
 
   [net]
 
-  (map (fn [[point.consensus hash.state.consensus->i.peer+]]
-         (.stream.txt.outln (str "Consensus point = " point.consensus))
-         (map (fn [[hash.state.consensus i.peer+]]
-                (.stream.txt.outln (str "Consensus state = " hash.state.consensus " <- " i.peer+)))
-              hash.state.consensus->i.peer+)
-         (.stream.txt.outln ""))
-       ($.net.local.diagnostic.impl/convergence net))
+  (.docoll (fn [[point.consensus hash.state.consensus->i.peer+]]
+             (.stream.txt.outln (str "Consensus point = " point.consensus))
+             (.docoll (fn [[hash.state.consensus i.peer+]]
+                        (.stream.txt.outln (str "Consensus state = " hash.state.consensus " <- " i.peer+)))
+                      hash.state.consensus->i.peer+)
+             (.stream.txt.outln ""))
+           ($.net.local.diagnostic.impl/convergence net))
   nil)
 
 
@@ -60,9 +60,9 @@
       (do
         (.stream.txt.outln "Pairs of peers at the same consensus point but actually divergent:")
         (.stream.txt.outln "")
-        (map (fn [pair]
-               (.stream.txt.outln (str (first pair) " & " (second pair))))
-             pair+))))
+        (.docoll (fn [pair]
+                   (.stream.txt.outln (str (first pair) " & " (second pair))))
+                 pair+))))
   nil)
 
 
@@ -85,12 +85,12 @@
          (.stream.txt.outln (str "N blocks aligned within divergent portion: " n.aligned))
          (.stream.txt.outln "")
          (.stream.txt.outln (str "Peer " i.peer-1 " last blocks:"))
-         (map (fn [h]
-                (.stream.txt.outln (str "    " h)))
-              last-block-1+)
+         (.docoll (fn [h]
+                    (.stream.txt.outln (str "    " h)))
+                  last-block-1+)
          (.stream.txt.outln "")
          (.stream.txt.outln (str "Peer " i.peer-2 " last blocks:"))
-         (map (fn [h]
-                (.stream.txt.outln (str "    " h)))
-              last-block-2+))
+         (.docoll (fn [h]
+                    (.stream.txt.outln (str "    " h)))
+                  last-block-2+))
   nil)

@@ -124,7 +124,7 @@
                       (.log.info* "No sync")
                       (.peer.init kp
                                   config-2)))
-                                  nil]))))))
+                  nil]))))))
 
 
 
