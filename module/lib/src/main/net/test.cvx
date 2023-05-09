@@ -1,0 +1,124 @@
+{:deploy [$.net.local (lib net local)
+          $.peer      (lib peer)]}
+
+
+;;;;;;;;;; Private
+
+
+(defn -start
+
+  ^:private?
+
+  [option+ f.peer]
+
+  (.log.level.set (get option+
+                       :log.level
+                       :info))
+  (def peer
+       (:peer (f.peer)))
+
+  (when-let [pipe (get option+
+                       :pipe
+                       "peer")]
+    (.log.info* (str "Starting worker named '" pipe "'"))
+    (.worker.start {:pipe pipe})))
+
+
+;;;;;;;;;; Starting peers
+
+
+(defn start.genesis
+
+
+  ([]
+
+   (start.genesis nil))
+
+
+  ([option+]
+
+   (-start option+
+           (fn []
+             ($.peer/start (if (nil? (:state option+))
+                             .account.0-key
+                             ($.net.local/-kp.peer.seed 0))
+                           (assoc option+
+                                  :host
+                                  (or (:host option+)
+                                      "0.0.0.0")))))))
+
+
+
+(defn start.sync
+
+
+  ([i.peer]
+
+   (start.sync i.peer
+               nil))
+
+
+  ([i.peer option+]
+
+   (-start option+
+           (fn []
+             ($.peer/start.sync ($.net.local/-kp.peer.seed i.peer)
+                                (assoc option+
+                                       :host
+                                       (or (:host option+)
+                                           "0.0.0.0")))))))
+
+
+
+
+
+
+;;;;;;;;;; Miscellaneous
+
+
+(defn client.repl
+
+
+  ([i.peer host]
+
+   (client.repl i.peer
+                host
+                nil))
+
+
+  ([i.peer host option+]
+
+   (.client.repl (merge {:rtt? true}
+                        option+
+                        {:address  (address (+ $.net.local/-ctrl.genesis
+                                               i.peer))
+                         :host     host
+                         :key-pair (.kp.create ($.net.local/-kp.peer.seed i.peer))}))))
+
+
+
+(defn state.genesis
+
+
+  ([]
+
+   (state.genesis nil))
+
+
+  ([option+]
+
+   (let [peer+    (:peer+ option+)
+         n.peer   (or (:n.peer option+)
+                      (count peer+))
+         kp.seed+ ($.net.local/-kp.peer.seed+ n.peer)]
+     (loop [acc    []
+            i.peer 0]
+       (if (< i.peer
+              n.peer)
+         (recur (conj acc
+                      (merge (get peer+
+                                  i.peer)
+                             {:key  (.kp.pubkey (.kp.create (get kp.seed+
+                                                                 i.peer)))}))
+                (inc i.peer))
+         (.state.genesis {:peer+ acc}))))))

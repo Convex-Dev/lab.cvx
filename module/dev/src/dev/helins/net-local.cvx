@@ -1,5 +1,6 @@
 {:deploy [$.client.pool           (lib client pool)
           $.net.local             (lib net local)
+          $.net.test              (lib net test)
           $.peer                  (lib peer)
           $.sim.load              (lib sim load)
           $.sim.scenario.dao      (lib sim scenario dao)
@@ -91,7 +92,7 @@
   nil)
 
 
-(def net
+#_(def net
      ($.net.local/start "net"
                         {:log.level :debug
                             ;:cmd                 '[jcvx]
@@ -118,13 +119,14 @@
                          {:dir "/tmp/net"}))
                  
 
+
 ;($.net.local/repl.peer net)
 ;($.net.local/stop net 0)
 
 ;($.net.local/repl.client net #12)
 
 
-($.net.local/load $.sim.scenario.torus/gen.trx)
+#_($.net.local/load $.sim.scenario.torus/gen.trx)
 
 
                     
@@ -137,3 +139,21 @@
 
 
 ;(.gen ((($.sim.scenario.oracle/gen.trx {:base.user 47 :base.oracle 147 :n.oracle 10 :n.user 100}) 50) 42))
+
+
+#_($.net.test/start.genesis {:dir   "/tmp/peer"
+                           :state (:state ($.sim.scenario.torus/state ($.net.test/state.genesis {:peer+ [{:host "0.0.0.0"}
+                                                                                                         {:host "0.0.0.0"
+                                                                                                          :port 18889}]})
+                                                                      5
+                                                                      50))})
+
+#_($.net.test/start.sync 1
+                       {:dir "/tmp/sync"
+                        :port 18889})
+                   
+
+
+;($.sim.load/start $.sim.scenario.torus/gen.trx)
+
+($.net.test/client.repl 0 "localhost")

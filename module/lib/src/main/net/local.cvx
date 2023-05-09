@@ -452,16 +452,16 @@
                          :rtt?     true}
                         option+
                         {:address addr
-                         :host     "localhost"
-                         :port     (let [n.peer       (count (:peer+ net))
-                                         port.genesis (:port.genesis net)]
-                                     (if (= 1
-                                            n.peer)
-                                       port.genesis
-                                       (+ port.genesis
-                                          (.gen (.gen.long.uniform 0
-                                                                  (dec n.peer))
-                                                {:seed (.time.unix)}))))}))))
+                         :host    "localhost"
+                         :port    (let [n.peer       (count (:peer+ net))
+                                        port.genesis (:port.genesis net)]
+                                    (if (= 1
+                                           n.peer)
+                                      port.genesis
+                                      (+ port.genesis
+                                         (.gen (.gen.long.uniform 0
+                                                                 (dec n.peer))
+                                               {:seed (.time.unix)}))))}))))
 
 
 (defn repl.peer
