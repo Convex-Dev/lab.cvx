@@ -87,7 +87,7 @@
   (.db.open "/tmp/genesis.etch")
   (let [config ($.sim.scenario.torus/state ($.net.local/state.genesis {:n.peer 3})
                                            5
-                                           100)]
+                                           20)]
     (.db.root.write (:state config)))
   nil)
 
@@ -125,7 +125,6 @@
 
 ;($.net.local/repl.client net #12)
 
-
 #_($.net.local/load $.sim.scenario.torus/gen.trx)
 
 
@@ -141,7 +140,7 @@
 ;(.gen ((($.sim.scenario.oracle/gen.trx {:base.user 47 :base.oracle 147 :n.oracle 10 :n.user 100}) 50) 42))
 
 
-#_($.net.test/start.genesis {:dir   "/tmp/peer"
+($.net.test/start.genesis {:dir   "/tmp/peer"
                            :state (:state ($.sim.scenario.torus/state ($.net.test/state.genesis {:peer+ [{:host "0.0.0.0"}
                                                                                                          {:host "0.0.0.0"
                                                                                                           :port 18889}]})
@@ -154,12 +153,12 @@
                    
 
 
-;($.sim.load/start $.sim.scenario.torus/gen.trx {:host "3.122.228.229"})
+#_($.sim.load/start $.sim.scenario.torus/gen.trx {:host "3.70.252.87"})
 
-;($.net.test/client.repl 0 "3.122.228.229")
+#_($.net.test/client.repl 0 "3.70.252.87")
 
 
 ;($.net.test.dia.impl/block.hash+ "/Users/adam/Code/convex/clj/tool/private/aws")
 
-(def net
-     ($.net.test/as-fake-local {:dir "/Users/adam/Code/convex/clj/tool/private/aws"}))
+#_(def net
+     ($.net.test/as-fake-local {:dir "/Users/adam/Code/convex/clj/tool/private/cloud/3"}))

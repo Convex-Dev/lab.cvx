@@ -78,6 +78,8 @@
 
 (defn client.repl
 
+  ;; TODO. Deduce `i.peer` by quering the pubkey from the peer status and then querying the controller.
+
 
   ([i.peer host]
 
