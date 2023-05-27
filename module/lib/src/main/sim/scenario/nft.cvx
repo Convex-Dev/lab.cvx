@@ -6,37 +6,48 @@
 
 (defn state
 
-  [state n.nft-per-user n.user]
 
-  ($.sim.state/prepare
-    state
-    n.user
-    {:code.user '(do
-                   (import asset.nft.tokens :as nft)
-                   (import convex.asset :as asset))
-     :custom    (fn [config]
-                  (let [base.user (:base.user config)]
-                    (loop [i.user  0
-                           state-2 (:state config)]
-                      (if (< i.user
-                             n.user)
-                        (recur (inc i.user)
-                               (let [user (address (+ base.user
-                                                      i.user))]
-                                 (loop [i.nft   0
-                                        state-3 state-2]
-                                   (if (< i.nft
-                                          n.nft-per-user)
-                                     (recur (inc i.nft)
-                                            (second ($.sim.state/exec state-3
-                                                                      user
-                                                                      `(call nft
-                                                                             (create-token {:name ~(str "NFT " i.nft)}
-                                                                                           nil)))))
-                                     state-3))))
-                         (assoc config
-                                :n.nft-per-user n.nft-per-user
-                                :state          state-2)))))}))
+  ([state]
+
+   (recur state
+          nil))
+
+
+  ([state option+]
+
+   (let [n.nft-per-user (or (:n.nft-per-user option+)
+                            20)
+         n.user         (or (:n.user option+)
+                            100)]
+     ($.sim.state/prepare
+       state
+       {:code.user '(do
+                      (import asset.nft.tokens :as nft)
+                      (import convex.asset :as asset))
+        :custom    (fn [config]
+                     (let [base.user (:base.user config)]
+                       (loop [i.user  0
+                              state-2 (:state config)]
+                         (if (< i.user
+                                n.user)
+                           (recur (inc i.user)
+                                  (let [user (address (+ base.user
+                                                         i.user))]
+                                    (loop [i.nft   0
+                                           state-3 state-2]
+                                      (if (< i.nft
+                                             n.nft-per-user)
+                                        (recur (inc i.nft)
+                                               (second ($.sim.state/exec state-3
+                                                                         user
+                                                                         `(call nft
+                                                                                (create-token {:name ~(str "NFT " i.nft)}
+                                                                                              nil)))))
+                                        state-3))))
+                            (assoc config
+                                   :n.nft-per-user n.nft-per-user
+                                   :state          state-2)))))
+        :n.user    n.user}))))
 
 
 

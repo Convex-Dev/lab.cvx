@@ -107,16 +107,17 @@
 (defn prepare
 
 
-  ([state n.user]
+  ([state]
 
     (prepare state
-             n.user
              nil))
 
 
-  ([state n.user option+]
+  ([state option+]
 
    (let [base.user       (count (:accounts state))
+         n.user          (or (:n.user option+)
+                             100)
          balance.initial (long (/ (get-in state
                                           [:accounts
                                            (long .account.genesis)

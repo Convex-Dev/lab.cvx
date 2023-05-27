@@ -6,12 +6,19 @@
 
 (defn state
 
-  [state n.user]
 
-  ($.sim.state/prepare state
-                       n.user
-                       {:code.user '(def x
-                                         0)}))
+  ([state]
+
+   (recur state
+          nil))
+
+  ([state option+]
+
+   ($.sim.state/prepare state
+                        (assoc option+
+                               :code.user
+                               '(def x
+                                     0)))))
  
 
 

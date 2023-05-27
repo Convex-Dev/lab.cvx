@@ -85,34 +85,35 @@
   []
 
   (.db.open "/tmp/genesis.etch")
-  (let [config ($.sim.scenario.torus/state ($.net.local/state.genesis {:n.peer 3})
-                                           5
-                                           20)]
+  (let [config ($.sim.scenario.transfer/state ($.net.local/state.genesis {:n.peer 4}))]
     (.db.root.write (:state config)))
   nil)
 
 
-#_(def net
-     ($.net.local/start "net"
-                        {:log.level :debug
-                            ;:cmd                 '[jcvx]
-                         :dir                 "/tmp/net"
-                         ;:etch.origin.syncer? false
-                         ;:n.max.sibling       9
-                         :state               "/tmp/genesis.etch"
-                         ;:state               ($.net.local/etch "/tmp/genesis.etch"
-                         ;                                       {:n.peer  10
-                         ;                                        ;:peer+   {0 {:stake 100}
-                         ;                                        ;          1 {:stake 100}
-                         ;                                        ;          2 {:stake 100}}
-                         ;                                        :prepare '(fn [state]
-                         ;                                                    (.state.switch #12
-                         ;                                                                   state)
-                         ;                                                    (def ok
-                         ;                                                         true)
-                         ;                                                    *state*)}) 
-                         ;:poll-delay          1000000000
-                     }))
+(defn local
+  []
+  (def net
+       ($.net.local/start "net"
+                          {:log.level :debug
+                              ;:cmd                 '[jcvx]
+                           :dir                 "/tmp/net"
+                           ;:etch.origin.syncer? false
+                           ;:n.max.sibling       9
+                           :state               "/tmp/genesis.etch"
+                           ;:state               ($.net.local/etch "/tmp/genesis.etch"
+                           ;                                       {:n.peer  10
+                           ;                                        ;:peer+   {0 {:stake 100}
+                           ;                                        ;          1 {:stake 100}
+                           ;                                        ;          2 {:stake 100}}
+                           ;                                        :prepare '(fn [state]
+                           ;                                                    (.state.switch #12
+                           ;                                                                   state)
+                           ;                                                    (def ok
+                           ;                                                         true)
+                           ;                                                    *state*)}) 
+                           ;:poll-delay          1000000000
+                       }))
+  ($.net.local/load $.sim.scenario.transfer/gen.trx))
 
 #_(def net
      ($.net.local/resume "net"
@@ -125,7 +126,6 @@
 
 ;($.net.local/repl.client net #12)
 
-#_($.net.local/load $.sim.scenario.torus/gen.trx)
 
 
                     
@@ -140,7 +140,7 @@
 ;(.gen ((($.sim.scenario.oracle/gen.trx {:base.user 47 :base.oracle 147 :n.oracle 10 :n.user 100}) 50) 42))
 
 
-($.net.test/start.genesis {:dir   "/tmp/peer"
+#_($.net.test/start.genesis {:dir   "/tmp/peer"
                            :state (:state ($.sim.scenario.torus/state ($.net.test/state.genesis {:peer+ [{:host "0.0.0.0"}
                                                                                                          {:host "0.0.0.0"
                                                                                                           :port 18889}]})
@@ -153,7 +153,7 @@
                    
 
 
-#_($.sim.load/start $.sim.scenario.torus/gen.trx {:host "3.70.252.87"})
+#_($.sim.load/start $.sim.scenario.torus/gen.trx {:host "3.72.80.51"})
 
 #_($.net.test/client.repl 0 "3.70.252.87")
 

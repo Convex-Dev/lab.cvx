@@ -6,70 +6,81 @@
 
 (defn state
 
-  [state n.dao n.user]
 
-  (when (> n.dao
-           n.user)
-    (fail :ARGUMENT
-          "Number of DAOs must be <= number of users"))
-  ($.sim.state/prepare
-    state
-    n.user
-    {:custom (fn [config]
-               (let [base.user (:base.user config)
-                     base.dao  (+ base.user
-                                  n.user)]
-                 (loop [i.dao    0
-                        state-2  (:state config)]
-                   (if (< i.dao
-                          n.dao)
-                     (recur (inc i.dao)
-                            (second ($.sim.state/exec
-                                      state-2
-                                      `(deploy
-                                         '(do
-                                            (import convex.trust :as trust)
-                                            (def whitelist
-                                                 (deploy (trust/build-whitelist
-                                                           {:whitelist ~(loop [acc    #{}
-                                                                               i.user i.dao]
-                                                                          (if (< i.user
-                                                                                 n.user)
-                                                                            (recur (conj acc
-                                                                                         (address (+ base.user
-                                                                                                     i.user)))
-                                                                                   (+ i.user
-                                                                                      n.dao))
-                                                                            acc))})))
-                                           (def counter
-                                                1)
-                                           (def voted
-                                                #{})
-                                           (defn vote
-                                             ^:callable?
-                                             [bool]
-                                             (when-not (trust/trusted? whitelist
-                                                                       *caller*)
-                                               (fail :TRUST
-                                                     "This should not happen"))
-                                             (def voted
-                                                  (if bool
-                                                    (conj voted
-                                                          *caller*)
-                                                    (disj voted
-                                                          *caller*)))
-                                             (if (= voted
-                                                    whitelist/whitelist)
-                                               (do
-                                                 (def voted
-                                                      #{})
-                                                 (def counter
-                                                      (inc counter)))
-                                               counter)))))))
-                     (assoc config
-                            :base.dao base.dao
-                            :n.dao    n.dao
-                            :state    state-2)))))}))
+  ([state]
+
+   (recur state
+          nil))
+
+
+  ([state option+]
+
+   (let [n.dao  (or (:n.dao option+)
+                    5)
+         n.user (or (:n.user option+)
+                    100)]
+     (when (> n.dao
+              n.user)
+       (fail :ARGUMENT
+             "Number of DAOs must be <= number of users"))
+     ($.sim.state/prepare
+       state
+       {:custom (fn [config]
+                  (let [base.user (:base.user config)
+                        base.dao  (+ base.user
+                                     n.user)]
+                    (loop [i.dao    0
+                           state-2  (:state config)]
+                      (if (< i.dao
+                             n.dao)
+                        (recur (inc i.dao)
+                               (second ($.sim.state/exec
+                                         state-2
+                                         `(deploy
+                                            '(do
+                                               (import convex.trust :as trust)
+                                               (def whitelist
+                                                    (deploy (trust/build-whitelist
+                                                              {:whitelist ~(loop [acc    #{}
+                                                                                  i.user i.dao]
+                                                                             (if (< i.user
+                                                                                    n.user)
+                                                                               (recur (conj acc
+                                                                                            (address (+ base.user
+                                                                                                        i.user)))
+                                                                                      (+ i.user
+                                                                                         n.dao))
+                                                                               acc))})))
+                                              (def counter
+                                                   1)
+                                              (def voted
+                                                   #{})
+                                              (defn vote
+                                                ^:callable?
+                                                [bool]
+                                                (when-not (trust/trusted? whitelist
+                                                                          *caller*)
+                                                  (fail :TRUST
+                                                        "This should not happen"))
+                                                (def voted
+                                                     (if bool
+                                                       (conj voted
+                                                             *caller*)
+                                                       (disj voted
+                                                             *caller*)))
+                                                (if (= voted
+                                                       whitelist/whitelist)
+                                                  (do
+                                                    (def voted
+                                                         #{})
+                                                    (def counter
+                                                         (inc counter)))
+                                                  counter)))))))
+                        (assoc config
+                               :base.dao base.dao
+                               :n.dao    n.dao
+                               :state    state-2)))))
+        :n.user n.user}))))
 
 
 
