@@ -5,6 +5,16 @@
 ;;;;;;;;;;
 
 
+(defn await
+
+  [promise+]
+
+  (.docoll .a.take
+           promise+)
+  nil)
+
+
+
 (defn start
 
 
@@ -18,18 +28,26 @@
 
    (when-not (.db.path)
      (.db.open (.fs.tmp)))
-   (let [config    (.try.resrc* [client (.client.connect option+)
-                                        (.client.close client)]
-                     (:result (.a.take (.client.query client
-                                                      .account.genesis
-                                                      'config))))
-         gen.trx-2 (gen.trx config)
-         base.user (:base.user config)
-         n.user    (:n.user config)
-         gen.seed  (long (/ 9223372036854775807
-                            n.user))
-         client+   ($.client.pool/connect n.user
-                                          ($.net/url+ option+))]
+   (.log.info* "Retrieving scenario configuration from peer")
+   (let [config            (.try.resrc* [client (.client.connect option+)
+                                                (.client.close client)]
+                             (:result (.a.take (.client.query client
+                                                              .account.genesis
+                                                              'config))))
+         _                 (.log.info* [:scenario
+                                        config])
+         gen.trx-2         (gen.trx config)
+         base.user         (:base.user config)
+         n.max-client-fail (or (:n.max-client-fail option+)
+                               5)
+         _                 (.log.info* (str "Maximum number of failures per client = "
+                                            n.max.client.fail))
+         n.user            (:n.user config)
+         _                 (.log.info* (str "Connecting " n.user " client(s)"))
+         gen.seed          (long (/ 9223372036854775807
+                                    n.user))
+         client+           ($.client.pool/connect n.user
+                                                  ($.net/url+ option+))]
      (loop [acc    []
             i.user 0]
        (if (< i.user
@@ -48,26 +66,46 @@
                                            gen.trx-3 (gen.trx-2 i.user)]
                                        (loop [gen.seed-2 (* gen.seed
                                                             i.user)
+                                              n.fail     0
                                               sequence   1]
-                                         (let [trx      (.kp.sign kp
-                                                                  (.gen (gen.trx-3 sequence)
-                                                                        {:seed gen.seed-2}))
-                                               ;; TODO. Add timeout.
-                                               [rtt
-                                                result] (.time.do*
-                                                          (.a.take (.client.transact client
-                                                                                     trx)))]
-                                           (.log.report* [addr (/ rtt 1e6) result])
-                                           ;(.time.sleep (.gen (.gen.long.uniform 0
-                                           ;                                      50)))
-                                           (recur
-                                             (inc gen.seed-2)
-                                             (if (= (:error result)
-                                                    :SEQUENCE)
-                                               (.a.take (.client.sequence client
-                                                                          addr))
-                                               (inc sequence)))))))]
+                                         (let [trx  (.kp.sign kp
+                                                              (.gen (gen.trx-3 sequence)
+                                                                    {:seed gen.seed-2}))
+                                               [ok?
+                                                x]  (.state.safe*
+                                                      (.time.do*
+                                                        (.a.take (.client.transact client
+                                                                                   trx))))]
+                                           (if ok?
+                                             (let [[rtt
+                                                    result] x]
+                                               (.log.info* [:client.result
+                                                            (assoc result
+                                                                   :address addr
+                                                                   :rtt     (/ rtt
+                                                                               1e6))])
+                                               ;(.time.sleep (.gen (.gen.long.uniform 0
+                                               ;                                      50)))
+                                               (recur
+                                                 (inc gen.seed-2)
+                                                 n.fail
+                                                 (if (= (:error result)
+                                                        :SEQUENCE)
+                                                   (.a.take (.client.sequence client
+                                                                              addr))
+                                                   (inc sequence))))
+                                            (do
+                                              (.log.error* [:client.fail {:address addr
+                                                                          :i.fail  n.fail}])
+                                              (when (< n.fail
+                                                       n.max-client-fail)
+                                                (recur
+                                                  gen.seed-2
+                                                  (inc n.fail)
+                                                  (inc sequence)))))))))]
                           (when-not ok?
-                            (.log.error* [:client x])))))
+                            (.log.error* [:client.exception 
+                                          {:address   addr
+                                           :exception x}])))))
                 (inc i.user))
          acc)))))
