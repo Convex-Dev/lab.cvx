@@ -115,24 +115,31 @@
                                                                    :address addr
                                                                    :rtt     (/ rtt
                                                                                1e6))])
-                                               (recur
-                                                 (inc gen.seed-2)
-                                                 n.fail
-                                                 ;; TODO. Better handling if retrieve the sequence ID fails?
-                                                 (if (= (:error result)
-                                                        :SEQUENCE)
-                                                   (.a.take (.client.sequence client
-                                                                              addr))
-                                                   (inc sequence))))
+                                               (let [[ok?
+                                                      x]  (.state.safe*
+                                                            (if (= (:error result)
+                                                                   :SEQUENCE)
+                                                              (.a.take (.client.sequence client
+                                                                                         addr))
+                                                              (inc sequence)))]
+                                                 (if ok?
+                                                   (recur
+                                                     (inc gen.seed-2)
+                                                     n.fail
+                                                     x)
+                                                   (.log.error* [:client.fail.sequence
+                                                                 {:address addr}]))))
                                             (do
                                               (.log.error* [:client.fail {:address addr
                                                                           :i.fail  n.fail}])
-                                              (when (< n.fail
-                                                       n.max-client-fail)
+                                              (if (< n.fail
+                                                     n.max-client-fail)
                                                 (recur
                                                   gen.seed-2
                                                   (inc n.fail)
-                                                  (inc sequence)))))))))]
+                                                  (inc sequence))
+                                                (.log.info* [:client.fail.final
+                                                             {:address addr}]))))))))]
                           (when-not ok?
                             (.log.error* [:client.exception 
                                           {:address   addr
