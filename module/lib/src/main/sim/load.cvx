@@ -29,7 +29,24 @@
    (when-not (.db.path)
      (.db.open (.fs.tmp)))
    (.log.info* "Retrieving scenario configuration from peer")
-   (let [config            (.try.resrc* [client (.client.connect option+)
+   (let [[n.bucket
+          i.bucket]        (or (:bucket option+)
+                               [1
+                                0])
+         i.bucket.last     (dec n.bucket)
+         _                 (when-not (<= 0
+                                         i.bucket
+                                         i.bucket.last)
+                             (fail :ARGUMENT
+                                   "Bucket index not within range"))
+         _                 (do
+                             (.log.info* (str "Number of buckets = "
+                                              n.bucket))
+                             (.log.info* (str "Bucket index = "
+                                              i.bucket)))
+         n.max-client-fail (or (:n.max-client-fail option+)
+                               3)
+         config            (.try.resrc* [client (.client.connect option+)
                                                 (.client.close client)]
                              (:result (.a.take (.client.query client
                                                               .account.genesis
@@ -37,15 +54,26 @@
          _                 (.log.info* [:scenario
                                         config])
          gen.trx-2         (gen.trx config)
-         base.user         (:base.user config)
-         n.max-client-fail (or (:n.max-client-fail option+)
-                               5)
          _                 (.log.info* (str "Maximum number of failures per client = "
-                                            n.max.client.fail))
-         n.user            (:n.user config)
-         _                 (.log.info* (str "Connecting " n.user " client(s)"))
+                                            n.max-client-fail))
+         n.user.total      (:n.user config)
+         n.user.bucket     (div n.user.total
+                                n.bucket)
+         n.user            (+ n.user.bucket
+                              (if (= i.bucket
+                                     i.bucket.last)
+                                (rem n.user.total
+                                     n.bucket)
+                                0))
+         base.user.rel     (* i.bucket
+                              n.user.bucket)
+         base.user         (+ (:base.user config)
+                              base.user.rel)
+         _                 (.log.info* (str "First user = "
+                                            (address base.user)))
          gen.seed          (long (/ 9223372036854775807
-                                    n.user))
+                                    n.user.total))
+         _                 (.log.info* (str "Connecting " n.user " client(s)"))
          client+           ($.client.pool/connect n.user
                                                   ($.net/url+ option+))]
      (loop [acc    []
@@ -63,7 +91,10 @@
                                                           (mod i.user
                                                                n.user))
                                            kp        (.kp.create (.kp.seed.dev addr.long))
-                                           gen.trx-3 (gen.trx-2 i.user)]
+                                           gen.trx-3 (gen.trx-2 (+ base.user.rel
+                                                                   i.user))]
+                                       ;(.time.sleep (.gen (.gen.long.uniform 0
+                                       ;                                      50)))
                                        (loop [gen.seed-2 (* gen.seed
                                                             i.user)
                                               n.fail     0
@@ -84,11 +115,10 @@
                                                                    :address addr
                                                                    :rtt     (/ rtt
                                                                                1e6))])
-                                               ;(.time.sleep (.gen (.gen.long.uniform 0
-                                               ;                                      50)))
                                                (recur
                                                  (inc gen.seed-2)
                                                  n.fail
+                                                 ;; TODO. Better handling if retrieve the sequence ID fails?
                                                  (if (= (:error result)
                                                         :SEQUENCE)
                                                    (.a.take (.client.sequence client

@@ -113,7 +113,7 @@
                            ;                                                    *state*)}) 
                            ;:poll-delay          1000000000
                        }))
-  ($.net.local/load $.sim.scenario.transfer/gen.trx))
+  ($.net.local/load net $.sim.scenario.transfer/gen.trx {:bucket [1 0]}))
 
 #_(def net
      ($.net.local/resume "net"

@@ -490,13 +490,16 @@
 (defn load
 
 
-  ([gen.trx]
-
-   (load nil
-         gen.trx))
-
-
   ([net gen.trx]
 
+   (recur net
+          gen.trx
+          nil))
+
+
+  ([net gen.trx option+]
+
    ($.sim.load/start gen.trx
-                     {:port (:port.genesis net)})))
+                     (assoc option+
+                            :port
+                            (:port.genesis net)))))
