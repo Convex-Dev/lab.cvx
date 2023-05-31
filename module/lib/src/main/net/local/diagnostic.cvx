@@ -1,4 +1,6 @@
-{:deploy [$.net.local.diagnostic.impl (lib net local diagnostic impl)]}
+{:deploy [$.net.local.diagnostic.impl (lib net local diagnostic impl)]
+ :doc    ["Running diagnostics over local networks."
+          "For expert users only."]}
 
 
 ;;;;;;;;;;
