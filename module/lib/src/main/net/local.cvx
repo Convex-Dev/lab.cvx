@@ -1,6 +1,14 @@
 {:deploy [$.client.pool (lib client pool)
           $.peer        (lib peer)
-          $.sim.load    (lib sim load)]}
+          $.sim.load    (lib sim load)]
+ :doc    ["Running local Convex networks where each peer runs in its own process."
+          ""
+          "It is advised setting the log level to INFO:"
+          ""
+          "    (.log.level.set :info)"
+          ""
+          ""
+          "See `start`."]}
 
 
 ;;;;;;;;;; Private helpers
@@ -177,6 +185,11 @@
 
 (def default.cmd
 
+  ^{:doc {:description ["Default command to run for starting a Convex Shell."
+                        ""
+                        "Will be used unless an alternative is provided in"
+                        "`resume` and `start`."]}}
+
   '[cvx])
 
 
@@ -185,7 +198,25 @@
 
 (defn resume
 
-  
+  ^{:doc {:description ["Resumes a local network previously started with `start`."
+                        ""
+                        "See `start` about the `name` argument."
+                        ""
+                        "A Map of options may be provided:"
+                        ""
+                        "  :dir"
+                        "    Must be the same directory as in the previous run."
+                        "    Defaults to the current working directory."
+                        ""
+                        "  :log.level"
+                        "    Log level to use."
+                        "    Defaults to `:info`."
+                        "    See `(?.shell '.log)."]
+          :examples    [{:code (resume "my-network")}]
+          :signature   [{:params [name]}
+                        {:params [name option+]}]}}
+
+
   ([name]
 
    (resume name
@@ -234,6 +265,56 @@
 
 (defn start
 
+  ^{:doc {:description ["Starts a local network, each peer running in its own process."
+                        "First a Genesis Peer is started, then all other peers which will"
+                        "sync the initial State of the network from the Genesis Peer."
+                        ""
+                        "When ready, each peer will start a worker according to the given `name`."
+                        "One can connect a REPL to each peer."
+                        "See `.repl.peer`."
+                        ""
+                        "Peers are numbered such that the Genesis Peer is Peer 0."
+                        ""
+                        "A Map of options may be provided:"
+                        ""
+                        "  :cmd"
+                        "    Command to use for starting a new Convex Shell."
+                        "    Defaults to `default.cmd` which assumes a Shell can be started"
+                        "    with `cvx`."
+                        ""
+                        "  :dir"
+                        "    Directory where all information about peers, such as their logs,"
+                        "    will reside."
+                        "    Defaults to the current working directory."
+                        ""
+                        "  :etch.origin.syncer?"
+                        "    If `true` (default), the Genesis Etch instance from the Genesis Peer"
+                        "    will be copied to all syncing peers to reduce syncing time."
+                        "    If `false`, the Genesis State will be synced from the Genesis Peer"
+                        "    over the network."
+                        ""
+                        "  :log.level"
+                        "    Log level to use."
+                        "    Defaults to `:info`."
+                        "    See `(?.shell '.log)."
+                        ""
+                        "  :state"
+                        "    Genesis State to use when bootstrapping the network."
+                        "    Either:"
+                        ""
+                        "      - An existing State (e.g. see `.state.genesis`)"
+                        ""
+                        "      - `nil`, a State will be produced with `state.genesis`"
+
+                        "      - Path to an Etch instance with the State to use at the root"
+                        ""
+                        ""
+                        "Returns a Map describing the network, which can be passed"
+                        "to other Functions in this Actor such as `kill`."]
+          :examples    [{:code (start "my-network")}]
+          :signature   [{:params [name]}
+                        {:params [name option+]}]}}
+
 
   ([name]
 
@@ -260,7 +341,7 @@
                          (let [path (str dir "/genesis.etch")]
                            (when-not (etch path
                                            (assoc option+
-                                                  :n.peer       3
+                                                  :n.peer       5
                                                   :port.genesis 18888))
                              (fail :SHELL.PEER
                                    "Error while generating genesis Etch instance"))
@@ -328,6 +409,11 @@
 
 (defn kill
 
+  ^{:doc {:description ["Kills a running local network or a single peer from"
+                        "that network (by index)."]
+          :signature   [{:params [net]}
+                        {:params [net i.peer]}]}}
+
 
   ([net]
 
@@ -355,6 +441,11 @@
 
 
 (defn stop
+
+  ^{:doc {:description ["Cleanly stops a running network or a single peer from"
+                        "that network (by index)."]
+          :signature   [{:params [net]}
+                        {:params [net i.peer]}]}}
 
 
   ([net]
@@ -395,6 +486,8 @@
 
 (defn etch
 
+  ^:private?
+
 
   ([path]
 
@@ -422,6 +515,28 @@
 
 (defn state.genesis
 
+  ^{:doc {:description ["Returns a Genesis State for N peers."
+                        ""
+                        "Public keys will be created in a deterministic way:"
+                        "using `.kp.seed.dev` and providing the Addresses of"
+                        "their controllers."
+                        ""
+                        "A Map of options may be provided:"
+                        ""
+                        "  :n.peer"
+                        "    Number of peers."
+                        "    Defaults the the number of peers in `:peer+`."
+                        ""
+                        "  :peer+"
+                        "    See `.state.genesis` (provided by the Shell)."
+                        ""
+                        "  :port.genesis"
+                        "    Port of the Genesis Peer."
+                        "    All other peers will sequentially use the port following"
+                        "    this genesis port."
+                        "    Defaults to `.peer.default.port`."]
+          :signature   [{:params []}
+                        {:params [option+]}]}}
 
   ([]
 
@@ -438,12 +553,22 @@
 
 (defn repl.client
 
+  ^{:doc {:description ["Wrapper over `.client.repl` for connecting a REPL to"
+                        "a local network."
+                        ""
+                        "The key pair for the given `addr` will be created deterministically"
+                        "using `.kp.seed.dev` with that Address."
+                        ""
+                        "Peer the client will connect to is chosen at random."]
+          :signature   [{:params [net addr]}
+                        {:params [net addr option+]}]}}
+
 
   ([net addr]
 
-    (repl.client net
-                 addr
-                 nil))
+   (repl.client net
+                addr
+                nil))
 
 
   ([net addr option+]
@@ -465,6 +590,15 @@
 
 
 (defn repl.peer
+
+  ^{:doc {:description ["Connects a REPL to the Shell running a peer (aka its worker)."
+                        ""
+                        "Peer will be chosen at random if no index is provided."
+                        ""
+                        "Each peer defines its peer object under `peer`."
+                        "See `(?.shell '.peer)` for inspecting it."]
+          :signature   [{:params [net]}
+                        {:params [i.peer]}]}}
 
 
   ([net]
@@ -488,6 +622,13 @@
 
 
 (defn load
+
+  ^{:doc {:description ["Simple wrapper over the `start` Function in `(lib sim load)`."
+                        "for starting a load generator against a local network."
+                        ""
+                        "A Map of options may be provided to forward it to that Function."]
+          :signature   [{:params [net gen.trx]}
+                        {:params [net gen.trx option+]}]}}
 
 
   ([net gen.trx]

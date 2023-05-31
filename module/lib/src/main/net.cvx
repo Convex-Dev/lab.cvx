@@ -1,4 +1,10 @@
-{}
+{:doc ["Helpers used when running various types Convex networks"
+       "provided in this repository."
+       ""
+       "See:"
+       ""
+       "    (lib net local)"
+       "    (lib net test)"]}
 
 
 ;;;;;;;;;;
@@ -6,11 +12,28 @@
 
 (defn url+
 
+  ^{:doc {:description ["Given the endpoint of a single peers, queries and"
+                        "returns a Vector of the endpoints of all the peers"
+                        "in the network according to `(:peers *state*)` of the"
+                        "current State of the network."
+                        ""
+                        "A Map of options may be provided:"
+                        ""
+                        "  :host"
+                        "    Host of the peer to query."
+                        "    Defaults to `\"localhost\"`."
+                        ""
+                        "  :port"
+                        "    Port of the peer to query."
+                        "    Defaults to `.peer.default.port`."]
+          :examples    [{:code (url+ {:host "123.42.24.321"})}]
+          :signature   [{:params []}
+                        {:params [option+]}]}}
+
 
   ([]
 
    (url+ nil))
-
 
 
   ([option+]
