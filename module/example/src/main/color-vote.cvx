@@ -4,8 +4,8 @@
 ;;;;;;;;;;
 
 
-;; A simple contract that collects votes
-;; Max one vote per account
+;; A simple contract that collects votes, meant to be deployed as an Actor.
+;; Max one vote per account.
 
 ;; who has voted so far
 (def voted #{})

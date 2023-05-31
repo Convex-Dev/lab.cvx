@@ -153,7 +153,7 @@
                    
 
 
-#_($.sim.load/start $.sim.scenario.torus/gen.trx {:host "3.72.80.51"})
+($.sim.load/start $.sim.scenario.torus/gen.trx {:host "3.75.204.44"})
 
 #_($.net.test/client.repl 0 "3.70.252.87")
 
