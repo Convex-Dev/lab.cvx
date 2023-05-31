@@ -1,10 +1,29 @@
-{}
+{:doc ["Utilities for running stress tests against Etch."
+       ""
+       "For example of stress tests, see:"
+       ""
+       "    (lib etch stress gen)"
+       "    (lib etch stress long)"
+       ""
+       "Each stress test must define 2 key Functions:"
+       ""
+       "  `integrity`"
+       "  `write`"
+       ""
+       "See `integrity` and `write` from this Actor that will"
+       "defer to those Functions and doing common work around"
+       "them."
+       ""
+       "See `run` for running such a stres test."]}
 
 
 ;;;;;;;;;; Helpers
 
 
 (defn avg.speed
+
+  ^{:doc {:description ["Helper used to compute the average write speed."]
+          :signature   [{:params [result]}]}}
 
   [result]
 
@@ -22,6 +41,10 @@
 
 
 (defn avg.speed.current
+
+  ^{:doc {:description ["Helper used by some stress tests to log the transient write speed"
+                        "during the write phase."]
+          :signature   [{:params [result]}]}}
 
   [result]
 
@@ -43,6 +66,10 @@
 
 (defn avg.speed.total
 
+  ^{:doc {:description ["Helper used by `write` to compute definitive results about"
+                        "the average write speed."]
+          :signature   [{:params [result]}]}}
+
   [result]
 
   (let [[bps
@@ -57,6 +84,10 @@
 
 (defn write.size.total?
 
+  ^{:doc {:description ["Helper used by some stress tests to compute the size"
+                        "growth of Etch."]
+          :signature   [{:params [result]}]}}
+
   [result]
 
   (>= (- (.db.size)
@@ -68,6 +99,16 @@
 
 
 (defn integrity
+
+  ^{:doc {:description ["Given the `addr` of a stress test and results coming"
+                        "from `write` over that stress test, performs an integrity"
+                        "check. Test data will be re-created and this Function will"
+                        "ensure that it can be indeed retrieved from Etch."
+                        ""
+                        "Conclusions are logged."
+                        "Given `result` is returned with key information added in case"
+                        "of failure."]
+          :signature   [{:params [addr result]}]}}
 
   [addr result]
 
@@ -91,39 +132,71 @@
 
 (defn write
 
-  [addr option+]
+  ^{:doc {:description ["Given the `addr`ess of a stress test, runs the write phase"
+                        "which consists of producing stress data in cycles and measuring"
+                        "Etch writes with that data."
+                        ""
+                        "A Map of options may be provided to be forwarded to the `write`"
+                        "function of the stress test."
+                        ""
+                        "Results are logged and key information is returned in a Map."]
+          :signature   [{:params [addr]}
+                        {:params [addr option+]}]}}
 
-  (.log.info* "Starting write phase")
-  (if (.db.path)
-    (.log.info* "Reusing currently open Etch instance")
-    (do
-      (.log.info* "Opening new Etch instance at temporary location")
-      (.db.open (.fs.tmp))))
-  (let [etch.path        (.db.path)
-        _                (.log.info* (str "Etch path = " etch.path))
-        write.size.total (or (:write.size.total option+)
-                             1e10)
-        _                (.log.info* (str "Etch growth target = " (/ write.size.total 1e9) " GB"))
-        etch.size.survey (or (:etch.size.survey option+)
-                             (min (/ write.size.total
-                                     10)
-                                  1e9))
-        _                (.log.info* (str "Speed monitored every " (/ etch.size.survey 1e6) " MB (minimum)"))
-        etch.size.start  (.db.size)
-        result           (addr/write (assoc option+
-                                            :etch.path        etch.path
-                                            :etch.size.start  etch.size.start
-                                            :etch.size.survey etch.size.survey
-                                            :n.nano           0
-                                            :write.size.total write.size.total))]
-    (.log.info* "End of write phase")
-    (avg.speed.total result)))
+
+  ([addr]
+
+   (recur addr
+          nil))
+
+
+  ([addr option+]
+
+   (.log.info* "Starting write phase")
+   (if (.db.path)
+     (.log.info* "Reusing currently open Etch instance")
+     (do
+       (.log.info* "Opening new Etch instance at temporary location")
+       (.db.open (.fs.tmp))))
+   (let [etch.path        (.db.path)
+         _                (.log.info* (str "Etch path = " etch.path))
+         write.size.total (or (:write.size.total option+)
+                              1e10)
+         _                (.log.info* (str "Etch growth target = " (/ write.size.total 1e9) " GB"))
+         etch.size.survey (or (:etch.size.survey option+)
+                              (min (/ write.size.total
+                                      10)
+                                   1e9))
+         _                (.log.info* (str "Speed monitored every " (/ etch.size.survey 1e6) " MB (minimum)"))
+         etch.size.start  (.db.size)
+         result           (addr/write (assoc option+
+                                             :etch.path        etch.path
+                                             :etch.size.start  etch.size.start
+                                             :etch.size.survey etch.size.survey
+                                             :n.nano           0
+                                             :write.size.total write.size.total))]
+     (.log.info* "End of write phase")
+     (avg.speed.total result))))
 
 
 ;;;
 
 
 (defn run
+
+  ^{:doc {:description ["Given the `addr`ess of a stress test:"
+                        ""
+                        "  - Outputs some system information"
+                        "  - Runs `write` over that Address"
+                        "  - Runs `integrity over that Addres"
+                        ""
+                        "A Map of options may be provided to be forwarded to `write`, which"
+                        "must also contain:"
+                        ""
+                        "  :write.size.total"
+                        "    In bytes, the write phase should stop when the size of Etch"
+                        "    has increased by that much."]
+          :signature   [{:params [addr option+]}]}}
 
   [addr option+]
 
@@ -142,6 +215,8 @@
 (defn run.process
 
   ^:private?
+
+  ;; Runs a stress test in a separate process.
 
   [dir path.impl option+]
 

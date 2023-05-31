@@ -1,11 +1,16 @@
 {:deploy [$.etch.stress (lib etch stress)
-          $.math.stat   (lib math stat)]}
+          $.math.stat   (lib math stat)]
+ :doc    ["Stress test generating data based on a given generator."
+          ""
+          "See `(?.shell '.gen)` about generators."]}
 
 
 ;;;;;;;;;; Helpers
 
 
 (defn gen
+
+  ^:private?
 
   [i.iter gen gen.seed gen.size write.size.cell]
 
@@ -28,6 +33,9 @@
 
 
 (defn integrity
+
+  ^{:doc {:description ["Integrity phase"]
+          :signature   [{:params [result]}]}}
 
   [result]
 
@@ -60,6 +68,31 @@
 
 
 (defn write
+
+  ^{:doc {:description ["Write phase."
+                        "For each iteration, uses a generator to create a Vector of pseudo-random"
+                        "data."
+                        ""
+                        ""
+                        "A Map of options may be provided:"
+                        ""
+                        "  :n.iter"
+                        "    Number of iterations (i.e. number of writes)"
+                        "    Mandatory."
+                        ""
+                        "  :gen"
+                        "    Generator to use."
+                        ""
+                        "  :gen.size"
+                        "    Generative size to use."
+                        ""
+                        "  :gen.seed"
+                        "    Initial seed to be used for generating the data."
+                        ""
+                        "  :write.size.cell"
+                        "    Cell encoding of each Vector will need to contain at least that many bytes."
+                        "    Defaults to 10MB (thus per iteration)."]
+          :signature   [{:params [result]}]}}
 
   [option+]
 
