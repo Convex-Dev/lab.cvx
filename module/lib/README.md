@@ -54,3 +54,17 @@ E.g. Stress test generating at least 10GB of random Convex data:
 ($.etch.stress/run $.etch.stress.gen
                    {:write.size.total 10e9})
 ```
+
+
+## Statistical functions
+
+Only a handful at the moment, will grow over time.
+
+E.g:
+
+```clojure
+{:deploy [$.math.stat (lib math stat)]}
+
+($.math.stat/stddev [1 2 3 4 5]
+                    {:type :population})
+```

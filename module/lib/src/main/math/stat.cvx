@@ -1,10 +1,14 @@
-{}
+{:doc ["Simple statistical functions."]}
 
 
 ;;;;;;;;;;
 
 
 (defn sum
+
+  ^{:doc {:description ["Computes the sum of a sequence of numbers."]
+          :examples    [{:code (sum [1 2 3])}]
+          :signature   [{:params [x+]}]}}
 
   [x+]
 
@@ -14,6 +18,13 @@
 
 
 (defn avg
+
+  ^{:doc {:description ["Computes the average of a sequence of numbers."
+                        ""
+                        "A Map containing the precomputed `:sum` may be provided."]
+          :examples    [{:code (avg [1 2 3 4 5])}]
+          :signature   [{:params [x+]}
+                        {:params [x+ option+]}]}}
 
 
   ([x+]
@@ -25,7 +36,7 @@
   ([x+ option+]
 
    (let [sum- (or (:sum option+)
-                 (sum x+))]
+                  (sum x+))]
      
      {:avg (/ sum-
               (count x+))
@@ -34,6 +45,20 @@
 
 
 (defn stddev
+
+  ^{:doc {:description ["Computes the standard deviation of a sequence of numbers."
+                        ""
+                        "A Map of options may be provided:"
+                        ""
+                        "  :avg"
+                        "    Precomputed average."
+                        "    See `avg`."
+                        ""
+                        "  :type"
+                        "    Either `:population` (default) or `:sample`."]
+          :examples    [{:code (stddev [1 2 3 4 5])}]
+          :signature   [{:params [x+]}
+                        {:params [x+ option+]}]}}
 
 
   ([x+]
