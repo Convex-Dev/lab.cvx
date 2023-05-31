@@ -68,3 +68,35 @@ E.g:
 ($.math.stat/stddev [1 2 3 4 5]
                     {:type :population})
 ```
+
+
+## Local networks
+
+Running test networks of N peers on a single machine for test purposes,
+each peer running in its own process.
+
+E.g. Network of 5 peers with default options:
+
+```clojure
+{:deploy [$.net.local (lib net local)]}
+
+;; Assumes a Convex Shell can be started with `cvx`.
+;
+(def net
+     ($.net.local/start "net"
+                        {:dir "/tmp/dir"}))
+
+;; Connects a REPL to the network for transacting using Account #12
+;
+($.net.local/repl.client net
+                         #12)
+
+;; Stop the network.
+;
+($.net.local/stop net)
+
+;; Resumes the network.
+;
+($.net.local/resume net
+                    {:dir "/tmp/dir"})
+```
