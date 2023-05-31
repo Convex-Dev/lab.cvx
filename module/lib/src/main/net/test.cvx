@@ -1,5 +1,16 @@
 {:deploy [$.net.local (lib net local)
-          $.peer      (lib peer)]}
+          $.peer      (lib peer)]
+ :doc    ["Helpers for starting test networks with 1 peer per machine."
+          "Wrappers over `(lib peer`)."
+          ""
+          "Key pairs of the peers will be created deterministically with"
+          "`.kp.seed.dev` by providing the Address of their controllers."
+          ""
+          "When ready, each peer will also start a worker named \"peer\","
+          "so that when connected to its machine, one can get REPL to its Shell"
+          "by running in another Shell:"
+          ""
+          "    (.worker.repl {:pipe \"peer\"})"]}
 
 
 ;;;;;;;;;; Private
@@ -29,6 +40,20 @@
 
 (defn start.genesis
 
+  ^{:doc {:description ["Starts a Genesis Peer."
+                        ""
+                        "For options, see the `start` Function in `(lib peer)`."
+                        "Will bind to `\"0.0.0.0\"` by default."
+                        ""
+                        "Additional options may be:"
+                        ""
+                        "  :log.level"
+                        "    Log level to use."
+                        "    Defaults to `:info`."
+                        "    See `(?.shell '.log)."]
+          :signature   [{:params []}
+                        {:params [option+]}]}}
+
 
   ([]
 
@@ -51,6 +76,17 @@
 
 (defn start.sync
 
+  ^{:doc {:description ["Starts a peer that will sync to another peer (often the"
+                        "the Genesis Peer)."
+                        ""
+                        "Peers are indexed with a number, the Genesis Peer acting"
+                        "as Peer 0."
+                        ""
+                        "For options, see `start.sync` in `(lib peer)`."
+                        "For other aspects, see `start`."]
+          :signature   [{:params [i.peer]}
+                        {:params [i.peer option+]}]}}
+          
 
   ([i.peer]
 
@@ -78,6 +114,15 @@
 
 (defn client.repl
 
+  ^{:doc {:description ["Wrapper over `.client.repl` provided by the Shell"
+                        "for getting a REPL and transacting using the controller"
+                        "of a Peer (by index)."
+                        ""
+                        "Options, if provided, will be forwarded to `.client.repl`."]
+          :examples    [{:code (client.repl 0 "123.42.24.321")}]
+          :signature   [{:params [i.peer host]}
+                        {:params [i.peer host option+]}]}}
+
   ;; TODO. Deduce `i.peer` by quering the pubkey from the peer status and then querying the controller.
 
 
@@ -100,6 +145,10 @@
 
 
 (defn state.genesis
+
+  ^:private?
+
+  ;; TODO. Fix.
 
 
   ([]
@@ -130,6 +179,8 @@
 
 
 (defn as-fake-local
+
+  ^:private?
 
   ;; Allows emulating a local network by pointing to a root directory gathering peer files from a test net.
   ;; Useful for reusing all the diagnostic tools for local networks.
