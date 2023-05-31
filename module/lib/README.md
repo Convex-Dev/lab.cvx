@@ -10,12 +10,12 @@ Off-Chain concerns as opposed to Smart Contracts.
 - Stress testing for Etch, the database for Convex data
 - Simple math utilities
 
-
+Find below some quick, key examples.
 
 
 ## Client pools
 
-Especially for testing situations, it is sometimes required creating a pool of 
+Especially for testing situations, it is sometimes required creating a pool of
 clients connected to Convex peers.
 
 E.g. Pool of 10 clients connected to 2 peers (5 each):
@@ -29,4 +29,28 @@ E.g. Pool of 10 clients connected to 2 peers (5 each):
                            {:host "localhost"}]))
 
 ($.client.pool/close client+)
+```
+
+
+## Etch stress testing
+
+E.g. Stress test generating at least 10GB of tuples of 4 Longs:
+
+```clojure
+{:deploy [$.etch.stress      (lib etch stress)
+          $.etch.stress.long (lib etch stress long)]}
+
+($.etch.stress/run $.etch.stress.long
+                   {:n.long           4
+                    :write.size.total 10e9})
+```
+
+E.g. Stress test generating at least 10GB of random Convex data:
+
+```clojure
+{:deploy [$.etch.stress     (lib etch stress)
+          $.etch.stress.gen (lib etch stress gen)]}
+
+($.etch.stress/run $.etch.stress.gen
+                   {:write.size.total 10e9})
 ```
