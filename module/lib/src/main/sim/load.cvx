@@ -1,11 +1,18 @@
 {:deploy [$.client.pool (lib client pool)
-          $.net         (lib net)]}
+          $.net         (lib net)]
+ :doc    ["Starting a load generator against a Convex Network."
+          ""
+          "See `start`."]}
 
 
 ;;;;;;;;;;
 
 
 (defn await
+
+  ^{:doc {:description ["Given the output of `start`, awaits for all simulated Users"
+                        "to terminate."]
+          :signature   [{:params [promise+]}]}}
 
   [promise+]
 
@@ -16,6 +23,51 @@
 
 
 (defn start
+
+  ^{:doc {:description ["Starts a load generator against a Convex Network."
+                        "Simulation scenarios store some configuration in the Genesis State, such"
+                        "as the number of Users to simulate. This information is queried automatically"
+                        "and the load generator will know what to do."
+                        ""
+                        "Requires a transaction generator matching the Genesis State of the network,"
+                        "prepared for a specific simulation."
+                        ""
+                        "Each scenario is an Actor providing both that transaction generator (`.gen.trx`)"
+                        "and a function for preparing the State (`state`)."
+                        ""
+                        "E.g. See '(lib sim scenario torus) for simulating Automated Market Maker"
+                        "     operations."
+                        ""
+                        ""
+                        "A Map of options may be provided:"
+                        ""
+                        "  :bucket"
+                        "    Several load generators can be started against a Network, as dictated by"
+                        "    this option, a Vector where:"
+                        "        0: Number of load generators that will be launched"
+                        "        1: Index of this load generator"
+                        "    Simulated users will be spread accordingly."
+                        "    Defaults to `[1 0]`, meaning only 1 load generator, this one being the"
+                        "    first and only one (index `0`)."
+                        ""
+                        "  :n.max-client-fail"
+                        "    Maximum number of times a simulated User can fail with an exception while"
+                        "    transacting before giving up and terminating."
+                        "    Defaults to `3`."
+                        ""
+                        "  :host"
+                        "    Host of the Peer from which sim configuration will be queried."
+                        "    Defaults to `\"localhost\"`."
+                        ""
+                        "  :port"
+                        "    Port of the Peer from which sim configuration will be queried."
+                        "    Defaults to `.peer.default.port`."
+                        ""
+                        "Returns a Vector of simulated Users."
+                        "Termination will occur of all Users fail beyond `:n.max-client-fail`."
+                        "See `await`."]
+          :signature   [{:params [gen.trx]}
+                        {:params [gen.trx option+]}]}}
 
 
   ([gen.trx]
