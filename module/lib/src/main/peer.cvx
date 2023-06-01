@@ -1,4 +1,7 @@
-{}
+{:doc ["Helpers for starting Convex Peers, built around the tooling offered by the Convex Shell."
+       ""
+       "Takes care of concerns like setting up logging, allowing Peers to be resumed, etc ;"
+       "so that starting a Peer can be close to a one-liner"]}
 
 
 ;;;;;;;;;; Helpers
@@ -55,6 +58,8 @@
 
 (defn dir
 
+  ^:private?
+
   [option+]
 
   (.fs.resolve (or (:dir option+)
@@ -64,6 +69,8 @@
 
 (defn url
 
+  ^:private?
+
 
   ([option+]
 
@@ -72,17 +79,25 @@
 
 
   ([host port]
-    (str (or host
-             "localhost")
-         ":"
-         (or port
-             .peer.default.port))))
+   (str (or host
+            "localhost")
+        ":"
+        (or port
+            .peer.default.port))))
 
 
 ;;;;;;;;;; Starting peers
 
 
 (defn resume
+
+  ^{:doc {:description ["Resumes a Peer previously started with `start` or `start.sync`."
+                        ""
+                        "A Map of options may be provided, same as the additional options"
+                        "described in `start`."]
+          :examples    [{:code (resume .account.0-key)}]
+          :signature   [{:params [kp.seed]}
+                        {:params [kp.seed option+]}]}}
 
 
   ([kp.seed]
@@ -130,6 +145,57 @@
 
 (defn start
 
+  ^{:doc {:description ["Starts a Genesis Peer, the very first Peer that will set the"
+                        "Genesis State of the network."
+                        ""
+                        "Key pair to use for that peer will be reconstructed from the given"
+                        "seed."
+                        ""
+                        ""
+                        "A Map of options may be provided, see `.peer.init` about:"
+                        ""
+                        "  :host"
+                        "  :n.max.sibling"
+                        "  :port"
+                        "  :root-key"
+                        "  :state"
+                        ""
+                        ""
+                        "The only difference is that `:state` can be either:"
+                        ""
+                        "  - An existing State (e.g. see `.state.genesis`)"
+                        ""
+                        "  - `nil`, a State will be produced with `state.genesis`"
+                        ""
+                        "  - Path to an Etch instance with the State to use at the root"
+                        ""
+                        ""
+                        "Additional options are:"
+                        ""
+                        "  :config.path"
+                        "    Path to the path where some configuration information will be stored."
+                        "    Allows resuming the peer with `resume`."
+                        "    Default to `\"config.cvx\"` in `:dir`."
+                        ""
+                        "  :dir"
+                        "    Directory to use for storing related files like logging."
+                        "    Defaults to the current working directory."
+                        ""
+                        "  :log.level"
+                        "    Log level to use."
+                        "    Defaults to `:info`."
+                        "    See `(?.shell '.log)."
+                        ""
+                        "  :log.level.out"
+                        "    Path to the log file."
+                        "    Default to `\"log.cvx\"` in `:dir`."
+                        ""
+                        ""
+                        "Returns a Map containing, more importantly, `:key-pair` and `:peer`."]
+          :examples    [{:code (start .account.key-0 {:state (.state.genesis)})}]
+          :signature   [{:params [kp.seed]}
+                        {:params [kp.seed option+]}]}}
+
 
   ([kp.seed]
 
@@ -175,6 +241,24 @@
 
 
 (defn start.sync
+
+  ^{:doc {:description ["Starts a Peer that will sync to another Peer, often a Genesis Peer,"
+                        "see `start`."
+                        ""
+                        "A Map of options may be provided, same ones as described in `start`"
+                        "(without `:state`), as well as:"
+                        ""
+                        "  :remote.host"
+                        "    Host of the remote Peer to sync against."
+                        "    Defaults to `\"localhost\"` but will typically be a public IP address."
+                        ""
+                        "  :remote.port"
+                        "    Port of the remote Peer to sync against."
+                        "    Defaults to `.peer.default.port`."
+                        ""
+                        "Returns a Map containing, more importantly, `:key-pair` and `:peer`."]
+          :signature   [{:params [kp.seed]}
+                        {:params [kp.seed option+]}]}}
 
 
   ([kp.seed]

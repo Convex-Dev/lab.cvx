@@ -305,7 +305,7 @@
                         "      - An existing State (e.g. see `.state.genesis`)"
                         ""
                         "      - `nil`, a State will be produced with `state.genesis`"
-
+                        ""
                         "      - Path to an Etch instance with the State to use at the root"
                         ""
                         ""
