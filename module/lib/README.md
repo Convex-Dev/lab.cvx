@@ -151,7 +151,7 @@ E.g. Network of 5 peers with default options:
 
 This repository provides all the necessary tooling for [load
 testing](./src/main/sim/load.cvx) running Networks according to [predefined
-scenarios](./src/main/sim/load/scenario).
+scenarios](./src/main/sim/scenario).
 
 E.g. Run Automated Market Maker operations against a Local Network of 10 Peers,
      simulating a 1000 Users trading 5 different fungible tokens.
