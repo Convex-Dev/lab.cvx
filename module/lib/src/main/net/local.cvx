@@ -301,11 +301,7 @@
                         "  :state"
                         "    Genesis State to use when bootstrapping the network."
                         "    Either:"
-                        ""
-                        "      - An existing State (e.g. see `.state.genesis`)"
-                        ""
-                        "      - `nil`, a State will be produced with `state.genesis`"
-                        ""
+                        "      - `nil`, a State will be produced with `state.genesis` for 5 Peers"
                         "      - Path to an Etch instance with the State to use at the root"
                         ""
                         ""
@@ -345,7 +341,7 @@
                                                   :port.genesis 18888))
                              (fail :SHELL.PEER
                                    "Error while generating genesis Etch instance"))
-                           [3
+                           [5
                             18888
                             path]))
          _             (do

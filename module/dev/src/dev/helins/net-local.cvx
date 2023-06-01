@@ -85,7 +85,8 @@
   []
 
   (.db.open "/tmp/genesis.etch")
-  (let [config ($.sim.scenario.transfer/state ($.net.local/state.genesis {:n.peer 3}))]
+  (let [config ($.sim.scenario.torus/state ($.net.local/state.genesis {:n.peer 10})
+                                           {:n.token 5 :n.user 1000})]
     (.db.root.write (:state config)))
   nil)
 
@@ -113,7 +114,7 @@
                            ;                                                    *state*)}) 
                            ;:poll-delay          1000000000
                        }))
-  ($.net.local/load net $.sim.scenario.transfer/gen.trx {:bucket [2 1]}))
+  ($.net.local/load net $.sim.scenario.torus/gen.trx))
 
 #_(def net
      ($.net.local/resume "net"
@@ -153,7 +154,7 @@
                    
 
 
-($.sim.load/start $.sim.scenario.torus/gen.trx {:host "3.75.204.44"})
+;($.sim.load/start $.sim.scenario.torus/gen.trx {:host "3.75.204.44"})
 
 #_($.net.test/client.repl 0 "3.70.252.87")
 

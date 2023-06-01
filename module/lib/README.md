@@ -114,7 +114,7 @@ E.g. Start a Peer that will sync against the Genesis Peer above, using another S
 ```
 
 
-## Local networks
+## Local Networks
 
 Running test networks of N peers on a single machine for test purposes,
 each peer running in its own process. Built on the Peer tooling exposed in the
@@ -145,3 +145,49 @@ E.g. Network of 5 peers with default options:
 ($.net.local/resume net
                     {:dir "/tmp/dir"})
 ```
+
+
+## Load testing against a live Networks
+
+This repository provides all the necessary tooling for [load
+testing](./src/main/sim/load.cvx) running Networks according to [predefined
+scenarios](./src/main/sim/load/scenario).
+
+E.g. Run Automated Market Maker operations against a Local Network of 10 Peers,
+     simulating a 1000 Users trading 5 different fungible tokens.
+
+First, let us prepare the Genesis State needed for the simulation. It is stored
+in an Etch file (Convex database) so that we can reuse at will:
+
+```clojure
+{:deploy [$.net.local          (lib net local)
+          $.sim.scenario.torus (lib sim scenario torus)]}
+
+(.db.open "/tmp/amm.etch")
+(let [config ($.sim.scenario.torus/state ($.net.local/state.genesis {:n.peer 10})
+                                         {:n.token 5
+                                          :n.user  1000})]
+  (.db.root.write (:state config)))
+```
+
+In a new Shell, we can now start the Local Network as well as a load generator
+against it:
+
+```clojure
+{:deploy [$.net.local             (lib net local)
+          $.sim.scenario.transfer (lib sim scenario transfer)]}
+
+(.log.level.set :info)
+
+(def net
+       ($.net.local/start "net"
+                          {:dir   "/tmp/localnet"
+                           :state "/tmp/amm.etch"}))
+
+($.net.local/load net
+                  $.sim.scenario.torus/gen.trx)
+```
+
+For running one or several load generators against a remote Network, see the
+[`start` Function in '(lib sim
+load)](./src/main/sim/load.cvx).
