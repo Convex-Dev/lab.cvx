@@ -1,10 +1,30 @@
-{:deploy [$.sim.state (lib sim state)]}
+{:deploy [$.sim.state (lib sim state)]
+ :doc    ["Simulation where Users act as oracles storing random numbers"
+          "in Smart Contracts granting access based on whitelists of Users."
+          ""
+          "Somewhat similar to '(lib sim scenario dao) with the difference"
+          "that those numbers are stored in ever expanding Vectors."]}
 
 
 ;;;;;;;;;;
 
 
 (defn state
+
+  ^{:doc {:description ["Prepares the given `state` for the simulation."
+                        ""
+                        "A Map of options may be provided:"
+                        ""
+                        "  :n.oracle"
+                        "    Number of oracle Smart Contracts where random numbers are stored."
+                        "    Defaults to `5`."
+                        ""
+                        "  :n.user"
+                        "    Number of Users that will be simulated."
+                        "    Defaults to `100`."]
+          :examples    [{:code (state {:n.oracle 200 :n.user 1000})}]
+          :signature   [{:params [state]}
+                        {:params [state option+]}]}}
 
  
   ([state]
@@ -72,6 +92,8 @@
 
 
 (defn gen.trx
+
+  ^{:doc {:description ["Transaction generator for this simulation."]}}
 
   [config]
 

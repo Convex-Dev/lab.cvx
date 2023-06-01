@@ -1,10 +1,26 @@
-{:deploy [$.sim.state (lib sim state)]}
+{:deploy [$.sim.state (lib sim state)]
+ :doc    ["Simulation emulating transfers of NFTs."]}
 
 
 ;;;;;;;;;;
 
 
 (defn state
+
+  ^{:doc {:description ["Prepares the given `state` for the simulation."
+                        ""
+                        "A Map of options may be provided:"
+                        ""
+                        "  :n.nft-per-user"
+                        "    Initial number of NFTs per User."
+                        "    Users will trade those tokens with each other."
+                        ""
+                        "  :n.user"
+                        "    Number of Users that will be simulated."
+                        "    Defaults to `100`."]
+          :examples    [{:code (state {:n.nft-per-user 15 :n.user 1000})}]
+          :signature   [{:params [state]}
+                        {:params [state option+]}]}}
 
 
   ([state]
@@ -52,6 +68,8 @@
 
 
 (defn gen.trx
+
+  ^{:doc {:description ["Transaction generator for this simulation."]}}
 
   [config]
 

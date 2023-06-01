@@ -1,10 +1,27 @@
-{:deploy [$.sim.state (lib sim state)]}
+{:deploy [$.sim.state (lib sim state)]
+ :doc    ["Simulation emulating transfers of fungible tokens."
+          "Akin to ERC-20 tokens on EVM platforms."]}
 
 
 ;;;;;;;;;;
 
 
 (defn state
+
+  ^{:doc {:description ["Prepares the given `state` for the simulation."
+                        ""
+                        "A Map of options may be provided:"
+                        ""
+                        "  :n.token"
+                        "    Number of tokens to create and that Users will transfer"
+                        "    to each other."
+                        ""
+                        "  :n.user"
+                        "    Number of Users that will be simulated."
+                        "    Defaults to `100`."]
+          :examples    [{:code (state {:n.token 10 :n.user 1000})}]
+          :signature   [{:params [state]}
+                        {:params [state option+]}]}}
 
   
   ([state]
@@ -60,6 +77,8 @@
 
 
 (defn gen.trx
+
+  ^{:doc {:description ["Transaction generator for this simulation."]}}
 
   [config]
 

@@ -1,10 +1,20 @@
-{:deploy [$.sim.state (lib sim state)]}
+{:deploy [$.sim.state (lib sim state)]
+ :doc    ["Simulation emulating transfers of Convex Coins, the native"
+          "utility token of Convex."]}
 
 
 ;;;;;;;;;;
 
 
 (defn state
+
+  ^{:doc {:description ["Prepares the given `state` for the simulation."
+                        ""
+                        "A Map of options may be provided:"
+                        ""
+                        "  :n.user"
+                        "    Number of Users that will be simulated."
+                        "    Defaults to `100`."]}}
 
 
   ([state]
@@ -21,6 +31,8 @@
 
 
 (defn gen.trx
+
+  ^{:doc {:description ["Transaction generator for this simulation."]}}
 
   [config]
 

@@ -1,10 +1,28 @@
-{:deploy [$.sim.state (lib sim state)]}
+{:deploy [$.sim.state (lib sim state)]
+ :doc    ["Simulation scenario emulating very simple DAO-like Smart Contracts"
+          "where Users of a whitelist must vote to approve the increment of"
+          "an number maintained by the DAO."]}
 
 
 ;;;;;;;;;;
 
 
 (defn state
+
+  ^{:doc {:description ["Prepares the given `state` for the simulation."
+                        ""
+                        "A Map of options may be provided:"
+                        ""
+                        "  :n.dao"
+                        "    Number of DAOs."
+                        "    Defaults to `5`."
+                        ""
+                        "  :n.user"
+                        "    Number of Users that will be simulated, spread across DAOs."
+                        "    Defaults to `100`."]
+          :examples    [{:code (state {:n.dao 10 :n.user 1000})}]
+          :signature   [{:params [state]}
+                        {:params [state option+]}]}}
 
 
   ([state]
@@ -85,6 +103,8 @@
 
 
 (defn gen.trx
+
+  ^{:doc {:description ["Transaction generator for this simulation."]}}
 
   [config]
 

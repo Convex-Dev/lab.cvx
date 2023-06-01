@@ -1,10 +1,26 @@
-{:deploy [$.sim.state (lib sim state)]}
+{:deploy [$.sim.state (lib sim state)]
+ :doc    ["Simple simulation where Users transact empty transactions."
+          ""
+          "This acts as a baseline, accounting for the work that a Convex"
+          "network must do, removing the cost of execution inherent to"
+          "transaction code."]}
 
 
 ;;;;;;;;;;
 
 
 (defn state
+
+  ^{:doc {:description ["Prepares the given `state` for the simulation."
+                        ""
+                        "A Map of options may be provided:"
+                        ""
+                        "  :n.user"
+                        "    Number of Users that will be simulated."
+                        "    Defaults to `100`."]
+          :examples    [{:code (state {:n.user 1000})}]
+          :signature   [{:params [state]}
+                        {:params [state option+]}]}}
 
 
   ([state]
@@ -21,6 +37,8 @@
 
 
 (defn gen.trx
+
+  ^{:doc {:description ["Transaction generator for this simulation."]}}
 
   [config]
 

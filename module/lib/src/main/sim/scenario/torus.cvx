@@ -1,10 +1,32 @@
-{:deploy [$.sim.state (lib sim state)]}
+{:deploy [$.sim.state (lib sim state)]
+ :doc    ["Simulation emulating Automated Market Maker operations using"
+          "Torus, an implementation part of the core Convex technology,"
+          "akin to Uniswap."
+          ""
+          "Currently, the most complex and interesting scenario in this"
+          "repository."]}
 
 
 ;;;;;;;;;;
 
 
 (defn state
+
+  ^{:doc {:description ["Prepares the given `state` for the simulation."
+                        ""
+                        "A Map of options may be provided:"
+                        ""
+                        "  :n.token"
+                        "    Number of tokens to create and that Users will trade using"
+                        "    Torus."
+                        "    Defaults to `3`."
+                        ""
+                        "  :n.user"
+                        "    Number of Users that will be simulated."
+                        "    Defaults to `100`."]
+          :examples    [{:code (state {:n.token 10 :n.user 1000})}]
+          :signature   [{:params [state]}
+                        {:params [state option+]}]}}
 
 
   ([state]
@@ -73,6 +95,8 @@
 
 
 (defn gen.trx
+
+  ^{:doc {:description ["Transaction generator for this simulation."]}}
 
   [config]
 

@@ -1,10 +1,24 @@
-{:deploy [$.sim.state (lib sim state)]}
+{:deploy [$.sim.state (lib sim state)]
+ :doc    ["Simulation testing transaction scheduling."
+          "Each new transaction schedule a new transaction."
+          "Each new block automatically triggers scheduled transactions."]}
 
 
 ;;;;;;;;;;
 
 
 (defn state
+
+  ^{:doc {:description ["Prepares the given `state` for the simulation."
+                        ""
+                        "A Map of options may be provided:"
+                        ""
+                        "  :n.user"
+                        "    Number of Users that will be simulated."
+                        "    Defaults to `100`."]
+          :examples    [{:code (state {:n.user 1000})}]
+          :signature   [{:params [state]}
+                        {:params [state option+]}]}}
 
 
   ([state]
@@ -23,6 +37,8 @@
 
 
 (defn gen.trx
+
+  ^{:doc {:description ["Transaction generator for this simulation."]}}
 
   [config]
 
