@@ -1,4 +1,4 @@
-{}
+{:doc ["Helpers for preparing States for simulations."]}
 
 
 ;;;;;;;;;;
@@ -78,6 +78,19 @@
 
 (defn exec
 
+  ^{:doc {:description ["Executes some the given `code` in the given `state` under the"
+                        "given `addr`ess." 
+                        ""
+                        "Address defaults to `.account.genesis`."
+                        ""
+                        "Returns a Vector where:"
+                        ""
+                        "  0: Result of executing the code"
+                        "  1: State resulting from executing the code"]
+          :examples    [{:code (exec (.state.genesis) '(def hello :world))}]
+          :signature   [{:params [state code]}
+                        {:params [state addr code]}]}}
+
 
   ([state code]
 
@@ -103,8 +116,40 @@
 
 
 
-
 (defn prepare
+
+  ^{:doc {:description ["Prepares the given `state` by creating N User Accounts, transferring funds to them,"
+                        "and optionally running some code in each account."
+                        ""
+                        ""
+                        "Amount transferred to each newly created User Accounts will be:"
+                        ""
+                        "  Balance of `.account.genesis` in `state` / 2 / N User Accounts"
+                        ""
+                        ""
+                        "A Map of options may be provided:"
+                        ""
+                        "  :code.user"
+                        "    Code to run in each newly created User Account."
+                        "    E.g. Importing a library"
+                        ""
+                        "  :n.user"
+                        "    Number of User Accounts to create."
+                        "    Defaults to `100`."
+                        ""
+                        "Returns a Map where:"
+                        ""
+                        "  :base.user"
+                        "    Address of the first newly created User Account (as a Long)."
+                        ""
+                        "  :n.user"
+                        "    How many User Accounts were created."
+
+                        "  :state"
+                        "    Resulting State."]
+          :examples    [{:code (prepare (.state.genesis {:n.user 1000 :code '(import convex.asset :as asset)}))}]
+          :signature   [{:params [state]}
+                        {:params [state option+]}]}}
 
 
   ([state]
