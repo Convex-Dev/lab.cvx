@@ -70,10 +70,55 @@ E.g:
 ```
 
 
+## Starting Peers
+
+The Convex Shell provides all the fundamentals for running Convex peers and this
+repository provides some helpers for making that experience more accessible.
+
+E.g. Start a Genesis Peer to bootstrap a network:
+
+```clojure
+{:deploy [$.peer (lib peer)]}
+
+(def key-pair
+     (.kp.create))
+
+(def peer
+     ($.peer/start (.kp.seed key-pair)
+                   {:dir   "/tmp/peer"
+                    :state (.state.genesis {:peer+ [{:host "public IP of this Peer"
+                                                     :key  (.kp.pubkey key-pair)}
+                                                    {:host "public IP of another Peer"
+                                                     :key  0x001122...}]})}))
+
+(.peer.stop (:peer peer))
+
+($.peer/resume (.kp.seed key-pair)
+               {:dir "/tmp/peer"})
+```
+
+E.g. Start a Peer that will sync against the Genesis Peer above, using another Shell,
+     commonly running on another machine:
+
+```clojure
+{:deploy [$.peer (lib peer)]}
+
+;; Key pair must match the public key of that Peer provided in the Genesis State above.
+;
+(def key-pair
+     (.kp.create 0x424242...))
+
+(def peer
+     ($.peer/start.sync (.kp.seed key-pair)
+                        {:remote.host "public IP of Genesis Peer above"}))
+```
+
+
 ## Local networks
 
 Running test networks of N peers on a single machine for test purposes,
-each peer running in its own process.
+each peer running in its own process. Built on the Peer tooling exposed in the
+previous example.
 
 E.g. Network of 5 peers with default options:
 
