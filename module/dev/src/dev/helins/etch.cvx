@@ -11,12 +11,12 @@
 (.db.open "/tmp/etch")
 
 
-($.etch.stress/run $.etch.stress.long
-                   {:etch.size.survey 100e6
+#_($.etch.stress/run $.etch.stress.long
+                   {:etch.size.survey 10e6
                     :n.long           2
                     :write.size.total 1e9})
 
-#_($.etch.stress/run $.etch.stress.gen
+($.etch.stress/run $.etch.stress.gen
                    {:etch.size.survey 100e6
                     :write.size.cell  10e6
                     :write.size.total 1e9

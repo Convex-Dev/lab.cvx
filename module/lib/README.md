@@ -34,26 +34,22 @@ E.g. Pool of 10 clients connected to 2 peers (5 each):
 
 ## Etch stress testing
 
-E.g. Stress test generating at least 10GB of tuples of 4 Longs:
-
-```clojure
-{:deploy [$.etch.stress      (lib etch stress)
-          $.etch.stress.long (lib etch stress long)]}
-
-($.etch.stress/run $.etch.stress.long
-                   {:n.long           4
-                    :write.size.total 10e9})
-```
-
-E.g. Stress test generating at least 10GB of random Convex data:
+E.g. Stress test generating at least 1 GB of 32-byte Blobs in Vectors
+     whose encoding size is at least 100 MB:
 
 ```clojure
 {:deploy [$.etch.stress     (lib etch stress)
           $.etch.stress.gen (lib etch stress gen)]}
 
 ($.etch.stress/run $.etch.stress.gen
-                   {:write.size.total 10e9})
+                   {:etch.size.survey 100e6
+                    :write.size.cell  10e6
+                    :write.size.total 1e9
+                    :gen              (.gen.blob-32)})
 ```
+
+An example of the output, logging the full process and displaying a write speed
+of 75 MB / second, is accessible [at this link](./result/etch/blob_32.cvx).
 
 
 ## Statistical functions
@@ -125,6 +121,8 @@ E.g. Network of 5 peers with default options:
 ```clojure
 {:deploy [$.net.local (lib net local)]}
 
+(.log.level.set :info)
+
 ;; Assumes a Convex Shell can be started with `cvx`.
 ;
 (def net
@@ -147,7 +145,7 @@ E.g. Network of 5 peers with default options:
 ```
 
 
-## Load testing against a live Networks
+## Load testing against a live Network
 
 This repository provides all the necessary tooling for [load
 testing](./src/main/sim/load.cvx) running Networks according to [predefined
