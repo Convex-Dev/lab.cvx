@@ -59,6 +59,10 @@
                         "    Defaults to `[1 0]`, meaning only 1 load generator, this one being the"
                         "    first and only one (index `0`)."
                         ""
+                        "  :n.connection"
+                        "    Number of client connections to open."
+                        "    Defaults to the number of users, resulting in 1 connection per user."
+                        ""
                         "  :n.iter.trx"
                         "    when this value is > 1, some scenarios support looping the transaction code"
                         "    for that many iterations."
@@ -142,8 +146,10 @@
                                             (address base.user)))
          gen.seed          (long (/ 9223372036854775807
                                     n.user.total))
-         _                 (.log.info* (str "Connecting " n.user " client(s)"))
-         client+           ($.client.pool/connect n.user
+         n.connection      (or (:n.connection option+)
+                               n.user)
+         _                 (.log.info* (str "Connecting " n.connection " client(s)"))
+         client+           ($.client.pool/connect n.connection
                                                   ($.net/url+ option+))]
      (loop [acc    []
             i.user 0]
@@ -158,7 +164,7 @@
                                            addr      (address addr.long)
                                            client    (nth client+
                                                           (mod i.user
-                                                               n.user))
+                                                               n.connection))
                                            kp        (.kp.create (.kp.seed.dev addr.long))
                                            gen.trx-3 (gen.trx-2 (+ base.user.rel
                                                                    i.user))]

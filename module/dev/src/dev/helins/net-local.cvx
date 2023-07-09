@@ -118,7 +118,7 @@
                            ;                                                }) 
                            :poll-delay          1000000000
                        }))
-  ($.net.local/load net $.sim.scenario.torus/gen.trx {:n.iter.trx 75})
+  ($.net.local/load net $.sim.scenario.torus/gen.trx {:n.iter.trx 75 :n.connection 3})
 )
 
 #_(def net
