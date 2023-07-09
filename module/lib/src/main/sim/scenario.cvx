@@ -1,0 +1,19 @@
+{:doc ["Tools used by some simulation scenarios."]}
+
+
+;;;;;;;;;;
+
+
+(defn iter-code
+
+  [config code]
+
+  (let [n.iter (:n.iter config)]
+    (if (= n.iter
+           1)
+      code
+      `(loop [i 0]
+         (when (< i
+                ~n.iter)
+           ~code
+           (recur (inc i)))))))

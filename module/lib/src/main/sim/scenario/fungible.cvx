@@ -1,4 +1,5 @@
-{:deploy [$.sim.state (lib sim state)]
+{:deploy [$.sim.scenario (lib sim scenario)
+          $.sim.state (lib sim state)]
  :doc    ["Simulation emulating transfers of fungible tokens."
           "Akin to ERC-20 tokens on EVM platforms."]}
 
@@ -78,7 +79,9 @@
 
 (defn gen.trx
 
-  ^{:doc {:description ["Transaction generator for this simulation."]}}
+  ^{:doc {:description ["Transaction generator for this simulation."
+                        ""
+                        "Supports `:n.iter.trx` in the load generator."]}}
 
   [config]
 
@@ -102,8 +105,9 @@
         (fn [sequence]
           (.gen.fmap (fn [[receiver token]]
                        (.trx.new.invoke origin
-                                        `(asset/transfer ~receiver
-                                                         [~token
-                                                          1])
+                                        ($.sim.scenario/iter-code config
+                                                                  `(asset/transfer ~receiver
+                                                                                   [~token
+                                                                                   1]))
                                         {:sequence sequence}))
                      gen.param+))))))

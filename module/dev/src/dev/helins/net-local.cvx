@@ -98,23 +98,28 @@
                           {:log.level :debug
                               ;:cmd                 '[jcvx]
                            :dir                 "/tmp/net"
-                           ;:etch.origin.syncer? false
+                           :etch.origin.syncer? false
                            ;:n.max.sibling       9
                            :state               "/tmp/genesis.etch"
                            ;:state               ($.net.local/etch "/tmp/genesis.etch"
-                           ;                                       {:n.peer  10
-                           ;                                        ;:peer+   {0 {:stake 100}
-                           ;                                        ;          1 {:stake 100}
-                           ;                                        ;          2 {:stake 100}}
-                           ;                                        :prepare '(fn [state]
-                           ;                                                    (.state.switch #12
-                           ;                                                                   state)
-                           ;                                                    (def ok
-                           ;                                                         true)
-                           ;                                                    *state*)}) 
-                           ;:poll-delay          1000000000
+                           ;                                       {;:n.peer  10
+                           ;                                        :peer+   {0 {:stake 1000000001}
+                           ;                                                  1 {:stake 1000000000}
+                           ;                                                  2 {:stake 1000000000}
+                           ;                                                  3 {:stake 1000000000}
+                           ;                                                  4 {:stake 1000000000}
+                           ;                                              }
+                           ;                                       ; :prepare '(fn [state]
+                           ;                                       ;             (.state.switch #12
+                           ;                                       ;                            state)
+                           ;                                       ;             (def ok
+                           ;                                       ;                  true)
+                           ;                                       ;             *state*)
+                           ;                                                }) 
+                           :poll-delay          1000000000
                        }))
-  ($.net.local/load net $.sim.scenario.torus/gen.trx))
+  ($.net.local/load net $.sim.scenario.torus/gen.trx {:n.iter.trx 75})
+)
 
 #_(def net
      ($.net.local/resume "net"

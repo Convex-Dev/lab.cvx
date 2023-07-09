@@ -59,6 +59,10 @@
                         "    Defaults to `[1 0]`, meaning only 1 load generator, this one being the"
                         "    first and only one (index `0`)."
                         ""
+                        "  :n.iter.trx"
+                        "    when this value is > 1, some scenarios support looping the transaction code"
+                        "    for that many iterations."
+                        ""
                         "  :n.max-client-fail"
                         "    Maximum number of times a simulated User can fail with an exception while"
                         "    transacting before giving up and terminating."
@@ -112,12 +116,16 @@
                              (:result (.a.take (.client.query client
                                                               .account.genesis
                                                               'config))))
+         config-2          (assoc config
+                                  :n.iter
+                                  (or (:n.iter.trx option+)
+                                      1))
          _                 (.log.info* [:scenario
-                                        config])
-         gen.trx-2         (gen.trx config)
+                                        config-2])
+         gen.trx-2         (gen.trx config-2)
          _                 (.log.info* (str "Maximum number of failures per client = "
                                             n.max-client-fail))
-         n.user.total      (:n.user config)
+         n.user.total      (:n.user config-2)
          n.user.bucket     (div n.user.total
                                 n.bucket)
          n.user            (+ n.user.bucket
@@ -128,7 +136,7 @@
                                 0))
          base.user.rel     (* i.bucket
                               n.user.bucket)
-         base.user         (+ (:base.user config)
+         base.user         (+ (:base.user config-2)
                               base.user.rel)
          _                 (.log.info* (str "First user = "
                                             (address base.user)))

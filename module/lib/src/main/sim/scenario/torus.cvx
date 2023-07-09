@@ -1,4 +1,5 @@
-{:deploy [$.sim.state (lib sim state)]
+{:deploy [$.sim.scenario (lib sim scenario)
+          $.sim.state    (lib sim state)]
  :doc    ["Simulation emulating Automated Market Maker operations using"
           "Torus, an implementation part of the core Convex technology,"
           "akin to Uniswap."
@@ -96,7 +97,9 @@
 
 (defn gen.trx
 
-  ^{:doc {:description ["Transaction generator for this simulation."]}}
+  ^{:doc {:description ["Transaction generator for this simulation."
+                        ""
+                        "Supports `:n.iter.trx` in the load generator."]}}
 
   [config]
 
@@ -124,8 +127,9 @@
         (fn [sequence]
           (.gen.fmap (fn [[op token.of amount token.with]]
                        (.trx.new.invoke origin
-                                        `(~op ~token.of
-                                              ~amount
-                                              ~token.with)
+                                        ($.sim.scenario/iter-code config
+                                                                  `(~op ~token.of
+                                                                        ~amount
+                                                                        ~token.with))
                                         {:sequence sequence}))
                      gen.param+))))))
