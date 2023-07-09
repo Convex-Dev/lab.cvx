@@ -18,7 +18,18 @@
                         "    Peer port."
                         "    Defaults to `.peer.default.port"
                         ""
-                        "Number of clients default to the number of peers."]
+                        ""
+                        "A Map of options may be provided:"
+                        ""
+                        "  :distr"
+                        "    Vector of probabilities that a client connects to a peer."
+                        "    E.g. [0.5 0.3]"
+                        "         50% of clients will connect to the first URL, 30% to the second one,"
+                        "         and the rest will connect to the third one."
+                        ""
+                        "  :n.client"
+                        "    Number of clients to connect."
+                        "    Defaults to the number of peers."]
           :examples    [{:code (connect 20 {:host "123.42.24.321"}) }]
           :signature   [{:params [url+]}
                         {:params [n.client url+]}]}}
@@ -26,32 +37,58 @@
 
   ([url+]
 
-   (connect nil
-            url+))
+   (connect url+
+            nil))
 
 
-  ([n.client url+]
-
-   (when (and n.client
-              (< n.client
-                 1))
-     (fail :ARGUMENT
-           "Must start at least 1 client"))
+  ([url+ option+]
+ 
    (when (empty? url+)
      (fail :ARGUMENT
-           "Must provide at least 1 end point"))
-   (let [n.url      (count url+)
-         n.client-2 (or n.client
-                        n.url)]
-     (loop [acc []
-            i   0]
-       (if (< i
-              n.client-2)
+           "Must provide at least 1 endpoint"))
+   (let [n.url    (count url+)
+         n.client (or (:n.client option+)
+                      n.url)
+         distr    (:distr option+)
+         f.distr  (if distr
+                    (let [n.distr (count distr)]
+                      (fn [i.client]
+                        (let [p.client (/ (inc i.client)
+                                          n.client)]
+                          (loop [cdf.peer 0
+                                 i.peer   0]
+                            (if (< i.peer
+                                   n.url)
+                              (if (< i.peer
+                                     n.distr)
+                                (let [cdf.peer-2 (+ cdf.peer
+                                                    (nth distr
+                                                         i.peer))]
+                                  (if (<= p.client
+                                          cdf.peer-2)
+                                    (nth url+
+                                         i.peer)
+                                    (recur cdf.peer-2
+                                           (inc i.peer))))
+                                (nth url+
+                                     i.peer))
+                              (last url+))))))
+                    (fn [i.client]
+                      (nth url+
+                           (mod i.client
+                                n.url))))]
+     (when (and n.client
+                (< n.client
+                   1))
+     (fail :ARGUMENT
+           "Must start at least 1 client"))
+     (loop [acc      []
+            i.client 0]
+       (if (< i.client
+              n.client)
          (recur (conj acc
-                      (.client.connect (nth url+
-                                            (mod i
-                                                 n.url))))
-                (inc i))
+                      (.client.connect (f.distr i.client)))
+                (inc i.client))
          acc)))))
 
 

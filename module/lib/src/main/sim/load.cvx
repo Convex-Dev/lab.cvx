@@ -59,7 +59,10 @@
                         "    Defaults to `[1 0]`, meaning only 1 load generator, this one being the"
                         "    first and only one (index `0`)."
                         ""
-                        "  :n.connection"
+                        "  :client.distr"
+                        "    See `:distr` in `connect` from `(lib client pool)`."
+                        ""
+                        "  :n.client"
                         "    Number of client connections to open."
                         "    Defaults to the number of users, resulting in 1 connection per user."
                         ""
@@ -79,6 +82,9 @@
                         "  :port"
                         "    Port of the Peer from which sim configuration will be queried."
                         "    Defaults to `.peer.default.port`."
+                        ""
+                        "  :region"
+                        "    See `:region` in `url+` from `(lib net)`."
                         ""
                         "Returns a Vector of simulated Users."
                         "Termination will occur of all Users fail beyond `:n.max-client-fail`."
@@ -146,12 +152,16 @@
                                             (address base.user)))
          gen.seed          (long (/ 9223372036854775807
                                     n.user.total))
-         n.connection      (or (:n.connection option+)
+         n.client          (or (:n.client option+)
                                n.user)
          url.peer+         ($.net/url+ option+)
-         _                 (.log.info* (str "Connecting " n.connection " client(s) over " (count url.peer+) " peer(s)"))
-         client+           ($.client.pool/connect n.connection
-                                                  url.peer+)]
+         _                 (.log.info* (str "Connecting " n.client " client(s) over " (count url.peer+) " peer(s)"))
+         client.distr      (:client.distr option+)
+         _                 (when client.distr
+                             (.log.info* (str "Client distribution over peers = " client.distr)))
+         client+           ($.client.pool/connect url.peer+
+                                                  {:distr    client.distr
+                                                   :n.client n.client})]
      (loop [acc    []
             i.user 0]
        (if (< i.user
@@ -165,7 +175,7 @@
                                            addr      (address addr.long)
                                            client    (nth client+
                                                           (mod i.user
-                                                               n.connection))
+                                                               n.client))
                                            kp        (.kp.create (.kp.seed.dev addr.long))
                                            gen.trx-3 (gen.trx-2 (+ base.user.rel
                                                                    i.user))]
