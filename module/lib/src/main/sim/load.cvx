@@ -148,9 +148,10 @@
                                     n.user.total))
          n.connection      (or (:n.connection option+)
                                n.user)
-         _                 (.log.info* (str "Connecting " n.connection " client(s)"))
+         url.peer+         ($.net/url+ option+)
+         _                 (.log.info* (str "Connecting " n.connection " client(s) over " (count url.peer+) " peer(s)"))
          client+           ($.client.pool/connect n.connection
-                                                  ($.net/url+ option+))]
+                                                  url.peer+)]
      (loop [acc    []
             i.user 0]
        (if (< i.user

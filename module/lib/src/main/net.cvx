@@ -25,7 +25,12 @@
                         ""
                         "  :port"
                         "    Port of the peer to query."
-                        "    Defaults to `.peer.default.port`."]
+                        "    Defaults to `.peer.default.port`."
+                        ""
+                        "  :region"
+                        "    For region awareness."
+                        "    If provided, will select peers that only have the same value provided"
+                        "    under `:region` in their metadata."]
           :examples    [{:code (url+ {:host "123.42.24.321"})}]
           :signature   [{:params []}
                         {:params [option+]}]}}
@@ -42,13 +47,20 @@
      (.db.open (.fs.tmp)))
    (.try.resrc* [client (.client.connect option+)
                         (.client.close client)]
-     (let [response (.a.take (.client.query client
+     (let [region   (:region option+)
+           response (.a.take (.client.query client
                                             .account.genesis
-                                            '(mapv (fn [peer]
-                                                     (:url (:metadata peer)))
-                                                   (values (:peers *state*))))
-                           10000
-                           :timeout)]
+                                            `(reduce (fn [acc peer]
+                                                       (let [metadata (:metadata peer)]
+                                                         (if (= (:region metadata)
+                                                                ~region)
+                                                           (conj acc
+                                                                 (:url metadata))
+                                                           acc)))
+                                                     []
+                                                     (values (:peers *state*))))
+                             10000
+                             :timeout)]
        (when (= response
                 :timeout)
          (fail :SHELL.CLIENT
