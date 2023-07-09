@@ -154,6 +154,8 @@
                                     n.user.total))
          n.client          (or (:n.client option+)
                                n.user)
+         _                 (when-let [region (:region option)]
+                             (.log.info* (str "Targetting region " region)))
          url.peer+         ($.net/url+ option+)
          _                 (.log.info* (str "Connecting " n.client " client(s) over " (count url.peer+) " peer(s)"))
          client.distr      (:client.distr option+)
