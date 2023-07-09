@@ -85,7 +85,7 @@
   []
 
   (.db.open "/tmp/genesis.etch")
-  (let [config ($.sim.scenario.torus/state ($.net.local/state.genesis {:n.peer 10 :peer+ [{:metadata {:region 2}}]})
+  (let [config ($.sim.scenario.torus/state ($.net.local/state.genesis {:n.peer 10 :peer+ [{:stake 100}]})
                                            {:n.token 5 :n.user 1000})]
     (.db.root.write (:state config)))
   nil)
@@ -118,7 +118,7 @@
                            ;                                                }) 
                            :poll-delay          1000000000
                        }))
-  ($.net.local/load net $.sim.scenario.torus/gen.trx {:n.iter.trx 75 :n.connection 3 :region 2})
+  ($.net.local/load net $.sim.scenario.torus/gen.trx {:n.iter.trx 75 :n.connection 3})
 )
 
 #_(def net

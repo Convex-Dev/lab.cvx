@@ -9,6 +9,30 @@
 
 ;;;;;;;;;;
 
+(defn -url.sort-stake
+
+  ^:private?
+
+  ;; Sorts peers by stake (from best to worst).
+
+  [peer+]
+  (if (<= (count peer+)
+          1)
+   peer+
+   (let [pivot       (first peer+)
+         pivot.stake (:stake pivot)
+         next+       (next peer+)]
+      (concat (-url.sort-stake (filter (fn [x]
+                                         (<= pivot.stake
+                                             (:stake x)))
+                                       next+))
+              [pivot]
+              (-url.sort-stake (filter (fn [x]
+                                         (> pivot.stake
+                                            (:stake x)))
+                                       next+))))))
+
+
 
 (defn url+
 
@@ -16,6 +40,8 @@
                         "returns a Vector of the endpoints of all the peers"
                         "in the network according to `(:peers *state*)` of the"
                         "current State of the network."
+                        ""
+                        "Sorted by stake (best to worst)."
                         ""
                         "A Map of options may be provided:"
                         ""
@@ -55,7 +81,8 @@
                                                          (if (= (:region metadata)
                                                                 ~region)
                                                            (conj acc
-                                                                 (:url metadata))
+                                                                 {:stake (:stake peer)
+                                                                  :url   (:url metadata)})
                                                            acc)))
                                                      []
                                                      (values (:peers *state*))))
@@ -65,38 +92,39 @@
                 :timeout)
          (fail :SHELL.CLIENT
                "Timeout while retrieving peer URLs"))
-       (mapv (fn [url]
-               (if (nil? url)
-                 {:host "localhost"
-                  :port .peer.default.port}
-                 (let [x (split url
-                                \:)
-                       n (count x)
-                       [host
-                        port] (cond
-                                ;;
-                                (= n
-                                   1)
-                                [(first x)
-                                 nil]
-                                ;;
-                                (= n
-                                   2)
-                                [(first x)
-                                 (let [port (second x)]
-                                   (if (empty? port)
-                                     nil
-                                     (let [port-2 (first (.reader.form+ port))]
-                                       (if (long? port-2)
-                                         port-2
-                                         (fail :STATE
-                                               "Peer port is not a number")))))]
-                                ;;
-                                (fail :STATE
-                                      "Peer URL not standard"))]
-                   {:host (if (empty? host)
-                            "localhost"
-                            host)
-                    :port (or port
-                              .peer.default.port)})))
-             (:result response))))))
+       (mapv (fn [peer]
+               (let [url (:url peer)]
+                 (if (nil? url)
+                   {:host "localhost"
+                    :port .peer.default.port}
+                   (let [x (split url
+                                  \:)
+                         n (count x)
+                         [host
+                          port] (cond
+                                  ;;
+                                  (= n
+                                     1)
+                                  [(first x)
+                                   nil]
+                                  ;;
+                                  (= n
+                                     2)
+                                  [(first x)
+                                   (let [port (second x)]
+                                     (if (empty? port)
+                                       nil
+                                       (let [port-2 (first (.reader.form+ port))]
+                                         (if (long? port-2)
+                                           port-2
+                                           (fail :STATE
+                                                 "Peer port is not a number")))))]
+                                  ;;
+                                  (fail :STATE
+                                        "Peer URL not standard"))]
+                     {:host (if (empty? host)
+                              "localhost"
+                              host)
+                      :port (or port
+                                .peer.default.port)}))))
+             (-url.sort-stake (:result response)))))))
