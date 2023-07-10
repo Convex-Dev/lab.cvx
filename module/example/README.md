@@ -21,6 +21,7 @@ Available example scenarios:
 
 | Name       | Description                     |
 |------------|---------------------------------|
+| `dao`      | Simple DAO-like behavior        |
 | `fungible` | Transfers of fungible tokens    |
 | `nft`      | Transfers of NFTs               |
 | `torus`    | Automated Market Maker trades   |
