@@ -17,7 +17,7 @@ users transacting according to a selected scenario. It is important that the
 Convex Shell is aliased in your system as `cvx` since each peer will run in its
 own process (launched automatically).
 
-Available example scenarios:
+Available scenarios:
 
 | Name       | Description                     |
 |------------|---------------------------------|
@@ -25,6 +25,7 @@ Available example scenarios:
 | `empty`    | NO-OP. just testing consensus   |
 | `fungible` | Transfers of fungible tokens    |
 | `nft`      | Transfers of NFTs               |
+| `oracle`   | Simple Oracle-like behavior     |
 | `torus`    | Automated Market Maker trades   |
 | `transfer` | Transfer of native Convex Coins |
 

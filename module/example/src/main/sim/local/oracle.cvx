@@ -1,0 +1,34 @@
+{:deploy [$.net.local           (lib net local)
+          $.sim.load            (lib sim load)
+          $.sim.scenario.oracle (lib sim scenario oracle)]}
+
+
+(.log.level.set :info)
+
+
+;;;;;;;;;;
+
+
+(defn prepare
+
+  []
+
+  (.db.open "/tmp/oracle.etch")
+  (let [config ($.sim.scenario.oracle/state ($.net.local/state.genesis {:n.peer 5})
+                                            {:n.oracle 200
+                                             :n.user   1000})]
+    (.db.root.write (:state config))
+    nil))
+
+
+
+(defn run
+
+  []
+
+  (def net
+         ($.net.local/start "net"
+                            {:dir   "/tmp/localnet"
+                             :state "/tmp/oracle.etch"}))
+  ($.sim.load/await ($.net.local/load net
+                                      $.sim.scenario.oracle/gen.trx)))
