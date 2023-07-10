@@ -1,0 +1,34 @@
+{:deploy [$.net.local        (lib net local)
+          $.sim.load         (lib sim load)
+          $.sim.scenario.nft (lib sim scenario nft)]}
+
+
+(.log.level.set :info)
+
+
+;;;;;;;;;;
+
+
+(defn prepare
+
+  []
+
+  (.db.open "/tmp/nft.etch")
+  (let [config ($.sim.scenario.nft/state ($.net.local/state.genesis {:n.peer 5})
+                                         {:n.nft-per-user 20
+                                          :n.user         1000})]
+    (.db.root.write (:state config))
+    nil))
+
+
+
+(defn run
+
+  []
+
+  (def net
+         ($.net.local/start "net"
+                            {:dir   "/tmp/localnet"
+                             :state "/tmp/nft.etch"}))
+  ($.sim.load/await ($.net.local/load net
+                                      $.sim.scenario.nft/gen.trx)))

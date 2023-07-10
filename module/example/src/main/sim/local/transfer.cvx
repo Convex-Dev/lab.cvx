@@ -1,0 +1,33 @@
+{:deploy [$.net.local             (lib net local)
+          $.sim.load              (lib sim load)
+          $.sim.scenario.transfer (lib sim scenario transfer)]}
+
+
+(.log.level.set :info)
+
+
+;;;;;;;;;;
+
+
+(defn prepare
+
+  []
+
+  (.db.open "/tmp/transfer.etch")
+  (let [config ($.sim.scenario.transfer/state ($.net.local/state.genesis {:n.peer 5})
+                                              {:n.user 1000})]
+    (.db.root.write (:state config))
+    nil))
+
+
+
+(defn run
+
+  []
+
+  (def net
+         ($.net.local/start "net"
+                            {:dir   "/tmp/localnet"
+                             :state "/tmp/transfer.etch"}))
+  ($.sim.load/await ($.net.local/load net
+                                      $.sim.scenario.transfer/gen.trx)))

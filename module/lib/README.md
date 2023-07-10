@@ -112,6 +112,8 @@ E.g. Start a Peer that will sync against the Genesis Peer above, using another S
 
 ## Local Networks
 
+NOTE: Convex Shell must be aliased in your system as `cvx`.
+
 Running test networks of N peers on a single machine for test purposes,
 each peer running in its own process. Built on the Peer tooling exposed in the
 previous example.
@@ -146,6 +148,9 @@ E.g. Network of 5 peers with default options:
 
 
 ## Load testing against a live Network
+
+NOTE: Convex Shell must be aliased in your system as `cvx`.
+      Also see [runnable examples](../example).
 
 This repository provides all the necessary tooling for [load
 testing](./src/main/sim/load.cvx) running Networks according to [predefined
