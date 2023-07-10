@@ -1,0 +1,33 @@
+{:deploy [$.net.local             (lib net local)
+          $.sim.load              (lib sim load)
+          $.sim.scenario.schedule (lib sim scenario schedule)]}
+
+
+(.log.level.set :info)
+
+
+;;;;;;;;;;
+
+
+(defn prepare
+
+  []
+
+  (.db.open "/tmp/schedule.etch")
+  (let [config ($.sim.scenario.schedule/state ($.net.local/state.genesis {:n.peer 5})
+                                              {:n.user 100})]
+    (.db.root.write (:state config))
+    nil))
+
+
+
+(defn run
+
+  []
+
+  (def net
+         ($.net.local/start "net"
+                            {:dir   "/tmp/localnet"
+                             :state "/tmp/schedule.etch"}))
+  ($.sim.load/await ($.net.local/load net
+                                      $.sim.scenario.schedule/gen.trx)))

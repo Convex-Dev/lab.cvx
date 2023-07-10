@@ -15,17 +15,18 @@ Before running anything:
 The following example creates a local network of 5 peers and simulates 1000
 users transacting according to a selected scenario. It is important that the
 Convex Shell is aliased in your system as `cvx` since each peer will run in its
-own process (launched automatically).
+own process (launched and managed automatically).
 
 Available scenarios:
 
 | Name       | Description                     |
 |------------|---------------------------------|
 | `dao`      | Simple DAO-like behavior        |
-| `empty`    | NO-OP. just testing consensus   |
+| `empty`    | NO-OP, just testing consensus   |
 | `fungible` | Transfers of fungible tokens    |
 | `nft`      | Transfers of NFTs               |
 | `oracle`   | Simple Oracle-like behavior     |
+| `schedule` | Transaction scheduling          |
 | `torus`    | Automated Market Maker trades   |
 | `transfer` | Transfer of native Convex Coins |
 
@@ -38,3 +39,5 @@ First, prepare the genesis state for the network:
 Then, start the network and the load generator:
 
     cvx '(.dep.exec (quote (example sim local $NAME))) (run)'
+
+Kill (CTRL+D) when done.
