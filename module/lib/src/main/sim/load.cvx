@@ -133,6 +133,20 @@
          _                 (.log.info* [:scenario
                                         config-2])
          gen.trx-2         (gen.trx config-2)
+         multi             (:multi option+)
+         _                 (when multi
+                             (.log.info* (str "Will create multi-transactions packing " multi " transactions")))
+         gen.trx-3         (if multi
+                              (fn [origin.long]
+                                (let [gen.trx.child (gen.trx-2 origin.long)]
+                                  (fn [sequence]
+                                    (.gen.fmap (fn [trx+]
+                                                 (.trx.new.multi.any (:origin (first trx+))
+                                                                     trx+
+                                                                     {:sequence sequence}))
+                                               (.gen.vector (gen.trx.child 0) ;; Sequence in children is ignored.
+                                                            multi)))))
+                              gen.trx-2)
          _                 (.log.info* (str "Maximum number of failures per client = "
                                             n.max-client-fail))
          n.user.total      (:n.user config-2)
@@ -179,7 +193,7 @@
                                                           (mod i.user
                                                                n.client))
                                            kp        (.kp.create (.kp.seed.dev addr.long))
-                                           gen.trx-3 (gen.trx-2 (+ base.user.rel
+                                           gen.trx-4 (gen.trx-3 (+ base.user.rel
                                                                    i.user))]
                                        ;(.time.sleep (.gen (.gen.long.uniform 0
                                        ;                                      50)))
@@ -188,7 +202,7 @@
                                               n.fail     0
                                               sequence   1]
                                          (let [trx  (.kp.sign kp
-                                                              (.gen (gen.trx-3 sequence)
+                                                              (.gen (gen.trx-4 sequence)
                                                                     {:seed gen.seed-2}))
                                                [ok?
                                                 x]  (.state.safe*

@@ -118,7 +118,7 @@
                            ;                                                }) 
                            :poll-delay          1000000000
                        }))
-  ($.net.local/load net $.sim.scenario.torus/gen.trx {:n.iter.trx 75 :n.client 10 :client.distr [0.6 0.31]})
+  ($.net.local/load net $.sim.scenario.torus/gen.trx {:multi nil :n.iter.trx 1 :n.client 10 :client.distr [0.6 0.31]})
 )
 
 #_(def net
